@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard - The Food Recipe</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+    <!-- ================================
+         ADMIN HEADER
+    ================================= -->
+
+    <header class="admin-header">
+
+        <div class="admin-logo">
+            🍴 The Food Recipe
+        </div>
+
+        <div class="admin-header-right">
+
+            <span id="adminWelcome">
+                Welcome, Admin
+            </span>
+
+            <button
+                class="logout-btn"
+                onclick="adminLogout()">
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================================
+         MAIN ADMIN DASHBOARD
+    ================================= -->
+
+    <main class="admin-container">
+
+        <!-- Page Heading -->
+
+        <section class="dashboard-heading">
+
+            <div>
+                <h1>Admin Dashboard</h1>
+
+                <p>
+                    Manage and monitor your Food Recipe website
+                </p>
+            </div>
+
+            <div class="admin-status">
+                <span class="status-dot"></span>
+                Admin Panel
+            </div>
+
+        </section>
+
+
+        <!-- ================================
+             STATISTICS CARDS
+        ================================= -->
+
+        <section class="stats-grid">
+
+            <!-- Users -->
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    👥
+                </div>
+
+                <div class="stat-info">
+
+                    <h3>Total Users</h3>
+
+                    <p id="totalUsers">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Recipes -->
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🍲
+                </div>
+
+                <div class="stat-info">
+
+                    <h3>Shared Recipes</h3>
+
+                    <p id="totalRecipes">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Reviews -->
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ⭐
+                </div>
+
+                <div class="stat-info">
+
+                    <h3>Total Reviews</h3>
+
+                    <p id="totalReviews">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Favorites -->
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ❤️
+                </div>
+
+                <div class="stat-info">
+
+                    <h3>Total Favorites</h3>
+
+                    <p id="totalFavorites">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Shopping List -->
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🛒
+                </div>
+
+                <div class="stat-info">
+
+                    <h3>Shopping Items</h3>
+
+                    <p id="totalShopping">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Activities -->
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    📊
+                </div>
+
+                <div class="stat-info">
+
+                    <h3>Total Activities</h3>
+
+                    <p id="totalActivities">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================================
+             DASHBOARD SECTIONS
+        ================================= -->
+
+        <section class="dashboard-grid">
+
+
+            <!-- ================================
+                 REGISTERED USERS
+            ================================= -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h2>👥 Registered Users</h2>
+
+                        <p>
+                            Users registered on the website
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>#</th>
+
+                                <th>Username</th>
+
+                                <th>Role</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="usersTableBody">
+
+                            <!-- Users will be inserted by admin.js -->
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ================================
+                 SHARED RECIPES
+            ================================= -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h2>🍲 Shared Recipes</h2>
+
+                        <p>
+                            Recipes submitted by users
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>#</th>
+
+                                <th>Recipe</th>
+
+                                <th>Category</th>
+
+                                <th>Rating</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="recipesTableBody">
+
+                            <!-- Recipes will be inserted by admin.js -->
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ================================
+                 REVIEWS
+            ================================= -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <h2>⭐ Reviews & Ratings</h2>
+
+                        <p>
+                            Reviews submitted by users
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="reviews-container"
+                    id="reviewsContainer">
+
+                    <!-- Reviews will be inserted by admin.js -->
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ================================
+                 ACTIVITY LOG
+            ================================= -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <h2>📊 Recent Activity</h2>
+
+                        <p>
+                            Recent actions performed on the website
+                        </p>
+
+                    </div>
+
+                    <button
+                        class="clear-btn"
+                        onclick="clearActivityLog()">
+
+                        Clear Activity
+
+                    </button>
+
+                </div>
+
+
+                <div
+                    class="activity-container"
+                    id="activityContainer">
+
+                    <!-- Activity will be inserted by admin.js -->
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================================
+             WEBSITE DATA SECTION
+        ================================= -->
+
+        <section class="dashboard-card data-section">
+
+            <div class="card-header">
+
+                <div>
+
+                    <h2>🗂️ Website Data</h2>
+
+                    <p>
+                        Overview of data stored by the website
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="data-grid">
+
+
+                <div class="data-box">
+
+                    <span class="data-box-icon">
+                        👤
+                    </span>
+
+                    <div>
+
+                        <h3>Logged-in User</h3>
+
+                        <p id="currentAdmin">
+                            Admin
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="data-box">
+
+                    <span class="data-box-icon">
+                        ❤️
+                    </span>
+
+                    <div>
+
+                        <h3>Favorites</h3>
+
+                        <p id="favoriteInfo">
+                            0
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="data-box">
+
+                    <span class="data-box-icon">
+                        🛒
+                    </span>
+
+                    <div>
+
+                        <h3>Shopping List</h3>
+
+                        <p id="shoppingInfo">
+                            0 items
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="data-box">
+
+                    <span class="data-box-icon">
+                        🔐
+                    </span>
+
+                    <div>
+
+                        <h3>Admin Access</h3>
+
+                        <p>
+                            Active
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================================
+             QUICK ACTIONS
+        ================================= -->
+
+        <section class="dashboard-card quick-actions">
+
+            <div class="card-header">
+
+                <div>
+
+                    <h2>⚡ Quick Actions</h2>
+
+                    <p>
+                        Common administrator actions
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="action-buttons">
+
+                <button
+                    onclick="refreshDashboard()"
+                    class="action-btn">
+
+                    🔄 Refresh Dashboard
+
+                </button>
+
+
+                <button
+                    onclick="viewWebsite()"
+                    class="action-btn">
+
+                    🌐 Open Website
+
+                </button>
+
+
+                <button
+                    onclick="exportAdminData()"
+                    class="action-btn">
+
+                    📥 Export Data
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- ================================
+         FOOTER
+    ================================= -->
+
+    <footer class="admin-footer">
+
+        <p>
+            © 2026 The Food Recipe | Admin Dashboard
+        </p>
+
+    </footer>
+
+
+    <!-- ================================
+         ADMIN JAVASCRIPT
+    ================================= -->
+
+    <script src="admin.js"></script>
+
+</body>
+</html>
