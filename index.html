@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>The Food Recipe</title>
+
+    <link rel="stylesheet"
+          href="style.css">
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     NAVBAR
+===================================================== -->
+
+<header>
+
+    <div class="navbar">
+
+
+        <a href="#" class="logo">
+
+            🍴
+
+            <span>
+                The Food Recipe
+            </span>
+
+        </a>
+
+
+        <nav>
+
+            <a href="#home">
+                Home
+            </a>
+
+            <a href="#recipes">
+                Recipes
+            </a>
+
+            <a href="#share">
+                Share Recipe
+            </a>
+
+        </nav>
+
+
+        <div class="nav-actions">
+
+            <button
+                id="favoritesBtn"
+                title="Favorites">
+
+                ❤️
+
+                <span id="favoriteCount">
+                    0
+                </span>
+
+            </button>
+
+
+            <button
+                id="darkModeBtn"
+                title="Dark Mode">
+
+                🌙
+
+            </button>
+
+
+            <!-- LOGIN / USER AREA -->
+
+            <div id="authContainer" class="auth-container">
+
+                <button
+                    id="loginBtn"
+                    class="login-btn"
+                    onclick="openLoginModal()">
+
+                    👤 Login
+
+                </button>
+
+
+                <div id="userInfo" class="user-info">
+
+                    <span id="loggedUsername" class="logged-username"></span>
+
+                    <button
+                        id="logoutBtn"
+                        class="logout-btn"
+                        onclick="logoutUser()">
+
+                        Logout
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</header>
+
+<!-- =====================================================
+     HERO
+===================================================== -->
+
+<section id="home"
+         class="hero">
+
+
+    <h1>
+
+        Discover Food.
+
+        <br>
+
+        <span>
+            Discover Happiness.
+        </span>
+
+    </h1>
+
+
+    <p>
+
+        Delicious recipes, irresistible flavours,
+        and cooking inspiration — all in one place.
+
+    </p>
+
+
+
+    <!-- SEARCH -->
+
+    <div class="search-container">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search for biryani, pizza, pasta...">
+
+
+        <button
+            type="button"
+            onclick="searchRecipes()">
+
+            🔍 Search
+
+        </button>
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     CRAVING SECTION
+===================================================== -->
+
+<section class="section-container">
+
+
+    <div class="cravings">
+
+
+        <h2>
+
+            What are you craving? 😋
+
+        </h2>
+
+
+        <p>
+
+            Tell us what your taste buds want today.
+
+        </p>
+
+
+        <div class="craving-options">
+
+
+            <button
+                class="craving-option"
+                onclick="cravingFilter('spicy')">
+
+                🌶️ Spicy
+
+            </button>
+
+
+            <button
+                class="craving-option"
+                onclick="cravingFilter('cheesy')">
+
+                🧀 Cheesy
+
+            </button>
+
+
+            <button
+                class="craving-option"
+                onclick="cravingFilter('sweet')">
+
+                🍫 Sweet
+
+            </button>
+
+
+            <button
+                class="craving-option"
+                onclick="cravingFilter('all')">
+
+                ✨ Surprise Me
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     INGREDIENT-BASED RECIPE FINDER
+===================================================== -->
+
+<section class="ingredient-finder">
+
+
+    <div class="section-container">
+
+
+        <div class="section-title">
+
+            <h2>
+                🥕 Find Recipes by Ingredients
+            </h2>
+
+            <p>
+                Enter the ingredients you have and discover recipes you can make.
+            </p>
+
+        </div>
+
+
+        <div class="ingredient-finder-box">
+
+
+            <input
+                type="text"
+                id="ingredientInput"
+                placeholder="Example: chicken, onion, tomato">
+
+
+            <button
+                type="button"
+                onclick="findRecipesByIngredients()">
+
+                🔎 Find Recipes
+
+            </button>
+
+
+        </div>
+
+
+        <p class="ingredient-help">
+
+            💡 Enter multiple ingredients separated by commas.
+
+        </p>
+
+
+        <div
+            id="ingredientResults"
+            class="ingredient-results">
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     RECIPES
+===================================================== -->
+
+<section id="recipes"
+         class="section-container">
+
+
+    <div class="section-title">
+
+
+        <h2>
+
+            Explore Delicious Recipes 🍽️
+
+        </h2>
+
+
+        <p>
+
+            Find something delicious for every mood.
+
+        </p>
+
+
+    </div>
+
+
+
+    <!-- CATEGORY FILTER -->
+
+    <div class="categories">
+
+
+        <button
+            class="category-btn active"
+            onclick="filterCategory('all')">
+
+            All
+
+        </button>
+
+
+        <button
+            class="category-btn"
+            onclick="filterCategory('indian')">
+
+            🇮🇳 Indian
+
+        </button>
+
+
+        <button
+            class="category-btn"
+            onclick="filterCategory('italian')">
+
+            🇮🇹 Italian
+
+        </button>
+
+
+        <button
+            class="category-btn"
+            onclick="filterCategory('fastfood')">
+
+            🍔 Fast Food
+
+        </button>
+
+
+        <button
+            class="category-btn"
+            onclick="filterCategory('dessert')">
+
+            🍰 Desserts
+
+        </button>
+
+
+        <button
+            class="category-btn"
+            onclick="filterCategory('healthy')">
+
+            🥗 Healthy
+
+        </button>
+
+
+    </div>
+
+
+
+    <!-- RECIPE CARDS ARE CREATED BY JAVASCRIPT -->
+
+    <div
+        id="recipeGrid"
+        class="recipe-grid">
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     SHARE RECIPE
+===================================================== -->
+
+<section id="share"
+         class="share-section">
+
+
+    <div class="section-container">
+
+
+        <div class="share-container">
+
+
+            <h2>
+
+                Share Your Recipe 👩‍🍳
+
+            </h2>
+
+
+            <p>
+
+                Have a delicious recipe?
+                Share it with our food-loving community!
+
+            </p>
+
+
+
+            <form id="recipeForm">
+
+
+                <!-- RECIPE NAME -->
+
+                <label for="recipeName">
+
+                    Recipe Name
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="recipeName"
+                    placeholder="Example: Spicy Chicken Biryani"
+                    required>
+
+
+
+                <!-- CUISINE -->
+
+                <label for="recipeCuisine">
+
+                    Cuisine
+
+                </label>
+
+
+                <select
+                    id="recipeCuisine"
+                    required>
+
+
+                    <option value="">
+
+                        Select Cuisine
+
+                    </option>
+
+
+                    <option value="indian">
+
+                        Indian
+
+                    </option>
+
+
+                    <option value="italian">
+
+                        Italian
+
+                    </option>
+
+
+                    <option value="fastfood">
+
+                        Fast Food
+
+                    </option>
+
+
+                    <option value="dessert">
+
+                        Dessert
+
+                    </option>
+
+
+                    <option value="healthy">
+
+                        Healthy
+
+                    </option>
+
+
+                </select>
+
+
+
+                <!-- TIME -->
+
+                <label for="recipeTime">
+
+                    Preparation Time
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="recipeTime"
+                    placeholder="Example: 30 min"
+                    required>
+
+
+
+                <!-- DIFFICULTY -->
+
+                <label for="recipeDifficulty">
+
+                    Difficulty
+
+                </label>
+
+
+                <select
+                    id="recipeDifficulty"
+                    required>
+
+
+                    <option value="">
+
+                        Select Difficulty
+
+                    </option>
+
+
+                    <option value="Easy">
+
+                        Easy
+
+                    </option>
+
+
+                    <option value="Medium">
+
+                        Medium
+
+                    </option>
+
+
+                    <option value="Hard">
+
+                        Hard
+
+                    </option>
+
+
+                </select>
+
+
+
+                <!-- IMAGE -->
+
+                <label for="recipeImage">
+
+                    Recipe Image
+
+                </label>
+
+
+                <input
+                    type="file"
+                    id="recipeImage"
+                    accept="image/*"
+                    required>
+
+
+                <small class="image-help">
+
+                    📷 Choose a food image from your computer.
+
+                </small>
+
+
+
+                <!-- INGREDIENTS -->
+
+                <label for="recipeIngredients">
+
+                    Ingredients
+
+                </label>
+
+
+                <textarea
+                    id="recipeIngredients"
+                    placeholder="Write the ingredients here..."
+                    required></textarea>
+
+
+
+                <!-- INSTRUCTIONS -->
+
+                <label for="recipeInstructions">
+
+                    Preparation Instructions
+
+                </label>
+
+
+                <textarea
+                    id="recipeInstructions"
+                    placeholder="Write the preparation steps here..."
+                    required></textarea>
+
+
+
+                <!-- PUBLISH -->
+
+                <button
+                    type="submit"
+                    class="publish-btn">
+
+                    🍴 Publish Recipe
+
+                </button>
+
+
+            </form>
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     RECIPE MODAL
+     
+     ⭐ RATING AND REVIEWS ARE ADDED HERE
+     DYNAMICALLY BY JAVASCRIPT.
+===================================================== -->
+
+<div
+    id="recipeModal"
+    class="modal">
+
+
+    <div class="modal-content">
+
+
+        <button
+            class="close-btn"
+            onclick="closeModal()">
+
+            ✕
+
+        </button>
+
+
+        <div id="modalContent">
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     FAVORITES MODAL
+===================================================== -->
+
+<div
+    id="favoritesModal"
+    class="modal">
+
+
+    <div class="modal-content">
+
+
+        <button
+            class="close-btn"
+            onclick="closeFavorites()">
+
+            ✕
+
+        </button>
+
+
+        <h2>
+
+            ❤️ My Favorite Recipes
+
+        </h2>
+
+
+        <div id="favoritesContent">
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     LOGIN / SIGNUP MODAL
+===================================================== -->
+
+<div
+    id="loginModal"
+    class="modal">
+
+
+    <div class="modal-content auth-modal-content">
+
+
+        <button
+            class="close-btn"
+            onclick="closeLoginModal()">
+
+            ✕
+
+        </button>
+
+
+        <div class="auth-tabs">
+
+            <button
+                id="loginTabBtn"
+                class="auth-tab-btn active-tab"
+                onclick="showLoginTab()">
+
+                Login
+
+            </button>
+
+
+            <button
+                id="signupTabBtn"
+                class="auth-tab-btn"
+                onclick="showSignupTab()">
+
+                Sign Up
+
+            </button>
+
+        </div>
+
+
+
+        <!-- LOGIN FORM -->
+
+        <div id="loginFormBox" class="auth-form-box">
+
+            <h2>
+
+                Welcome Back 👋
+
+            </h2>
+
+            <p class="auth-subtext">
+
+                Login to search, view, share and favourite recipes.
+
+            </p>
+
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+
+                <label for="loginUsername">
+
+                    Username
+
+                </label>
+
+                <input
+                    type="text"
+                    id="loginUsername"
+                    class="auth-input"
+                    placeholder="Enter your username"
+                    required>
+
+
+                <label for="loginPassword">
+
+                    Password
+
+                </label>
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    class="auth-input"
+                    placeholder="Enter your password"
+                    required>
+
+
+                <button
+                    type="submit"
+                    class="auth-submit-btn">
+
+                    🔐 Login
+
+                </button>
+
+            </form>
+
+        </div>
+
+
+
+        <!-- SIGN UP FORM -->
+
+        <div id="signupFormBox" class="auth-form-box" style="display:none;">
+
+            <h2>
+
+                Create Account 📝
+
+            </h2>
+
+            <p class="auth-subtext">
+
+                Sign up with a username and password to get started.
+
+            </p>
+
+
+            <form id="signupForm" onsubmit="handleSignup(event)">
+
+                <label for="signupUsername">
+
+                    Username
+
+                </label>
+
+                <input
+                    type="text"
+                    id="signupUsername"
+                    class="auth-input"
+                    placeholder="Choose a username"
+                    required>
+
+
+                <label for="signupPassword">
+
+                    Password
+
+                </label>
+
+                <input
+                    type="password"
+                    id="signupPassword"
+                    class="auth-input"
+                    placeholder="Choose a password"
+                    required>
+
+
+                <button
+                    type="submit"
+                    class="auth-submit-btn">
+
+                    ✅ Sign Up
+
+                </button>
+
+            </form>
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+<footer>
+
+
+    <p>
+
+        🍴 The Food Recipe
+
+    </p>
+
+
+    <p>
+
+        Made with ❤️ for food lovers.``
+
+    </p>
+
+
+</footer>
+
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
