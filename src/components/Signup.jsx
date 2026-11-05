@@ -1,70 +1,114 @@
-
-import React, { useState } from "react";
+import { useState } from 'react';
 
 function Signup({ onSignup, onSwitchToLogin }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = (event) => {
+  function handleSubmit(event) {
     event.preventDefault();
-    setError("");
+    setMessage('');
+
+    if (password.length < 6) {
+      setMessage('Password must contain at least 6 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match.');
+      return;
+    }
 
     const result = onSignup(name, email, password);
 
-    if (!result.success) {
-      setError(result.message);
+    if (!result?.success) {
+      setMessage(result?.message || 'Unable to create account.');
     }
-  };
+  }
 
   return (
-    <div className="auth-container">
-      <form className="auth-card" onSubmit={handleSubmit}>
-        <h2>Create Account</h2>
-        <p>Join FOOD RECIPE today!</p>
+    <main className="auth-page">
+      <div className="auth-card">
+        <div className="auth-icon">📝</div>
 
-        <input
-          type="text"
-          placeholder="Enter your full name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
+        <p className="section-kicker">JOIN OUR COMMUNITY</p>
+        <h1>Create Account</h1>
 
-        <input
-          type="email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <p className="auth-subtext">
+          Sign up and start exploring delicious recipes.
+        </p>
 
-        <input
-          type="password"
-          placeholder="Create a password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          minLength={6}
-          required
-        />
+        <form onSubmit={handleSubmit} className="auth-form">
+          <label htmlFor="signup-name">Full Name</label>
+          <input
+            id="signup-name"
+            type="text"
+            placeholder="Enter your name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            required
+          />
 
-        {error && <p className="auth-error">{error}</p>}
+          <label htmlFor="signup-email">Email Address</label>
+          <input
+            id="signup-email"
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
 
-        <button type="submit">Sign Up</button>
+          <label htmlFor="signup-password">Password</label>
+          <input
+            id="signup-password"
+            type="password"
+            placeholder="Create a password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            minLength={6}
+          />
 
-        <p>
-          Already have an account?{" "}
-          <button
-            type="button"
-            className="auth-link"
-            onClick={onSwitchToLogin}
-          >
+          <label htmlFor="confirm-password">Confirm Password</label>
+          <input
+            id="confirm-password"
+            type="password"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+          />
+
+          {message && (
+            <p className="auth-error" role="alert">
+              {message}
+            </p>
+          )}
+
+          <button type="submit" className="auth-submit-btn">
+            ✅ Create Account
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          Already have an account?{' '}
+          <button type="button" onClick={onSwitchToLogin}>
             Login
           </button>
         </p>
-      </form>
-    </div>
+
+        <button
+          type="button"
+          className="auth-home-button"
+          onClick={() => window.location.reload()}
+        >
+          ← Back to Home
+        </button>
+      </div>
+    </main>
   );
 }
 

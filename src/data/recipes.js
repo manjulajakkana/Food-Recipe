@@ -1,4 +1,3 @@
-
 export const recipes = [
   {
     id: 1,
@@ -167,7 +166,7 @@ export const recipes = [
     difficulty: "Medium",
     description: "Crispy and spicy Indian chicken appetizer packed with flavour.",
     ingredients: "Chicken\nCorn flour\nRice flour\nYogurt\nRed chilli powder\nGinger garlic paste\nCurry leaves",
-    instructions: "1. Marinate chicken with yogurt and spices.\n\n2. Add corn flour and rice flour.\n\n3. Coat the chicken evenly.\n\n4. Fry until crisp and cooked.\n\n5. Temper curry leaves and chillies.\n\n6. Toss the chicken and serve."
+    instructions: "1. Marinate chicken with yogurt and spices.\n\n2. Add corn flour and rice flour.\n\n3. Coat the chicken evenly.\n\n4. Cook until crisp and cooked.\n\n5. Temper curry leaves and chillies.\n\n6. Toss the chicken and serve."
   },
   {
     id: 14,

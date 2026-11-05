@@ -1,0 +1,553 @@
+/* ==========================================
+   THE FOOD RECIPE - ADMIN DASHBOARD
+   Complete styling for AdminDashboard.jsx
+========================================== */
+
+.admin-dashboard {
+  width: 100%;
+  min-height: 100vh;
+  padding: 45px 6%;
+  background: #fffaf6;
+  color: #332b27;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Dashboard heading */
+
+.admin-welcome {
+  max-width: 1250px;
+  margin: 0 auto 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.admin-welcome h1 {
+  font-family: Georgia, serif;
+  font-size: 38px;
+  margin: 8px 0;
+  color: #332b27;
+}
+
+.admin-welcome h1 span {
+  font-size: 30px;
+}
+
+.admin-welcome p {
+  color: #81756e;
+  font-size: 16px;
+}
+
+.section-kicker {
+  color: #f05b32;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.admin-role-label {
+  padding: 10px 18px;
+  border-radius: 25px;
+  background: #fff0e7;
+  color: #e6532d;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Statistics */
+
+.admin-stats {
+  max-width: 1250px;
+  margin: 0 auto 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #eee2da;
+  border-radius: 17px;
+  box-shadow: 0 5px 20px rgba(80, 50, 30, 0.05);
+}
+
+.admin-stat-icon {
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff0e7;
+  border-radius: 14px;
+  font-size: 25px;
+  flex-shrink: 0;
+}
+
+.admin-stat-card strong {
+  display: block;
+  font-size: 27px;
+  color: #332b27;
+}
+
+.admin-stat-card small {
+  display: block;
+  color: #81756e;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+/* Tabs */
+
+.admin-tabs {
+  max-width: 1250px;
+  margin: 0 auto 25px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-tabs button {
+  border: 1px solid #eaded6;
+  background: #ffffff;
+  color: #514943;
+  padding: 12px 21px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.admin-tabs button:hover {
+  background: #fff0e7;
+  color: #f05b32;
+}
+
+.admin-tabs button.active {
+  background: #f05b32;
+  color: #ffffff;
+  border-color: #f05b32;
+}
+
+/* Main content */
+
+.admin-content {
+  max-width: 1250px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+.admin-panel {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #eee2da;
+  border-radius: 18px;
+  padding: 28px;
+  margin: 0 auto 25px;
+  box-shadow: 0 8px 28px rgba(80, 50, 30, 0.05);
+  overflow: hidden;
+}
+
+/* Panel headings */
+
+.admin-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.admin-panel-heading h2 {
+  font-family: Georgia, serif;
+  font-size: 27px;
+  color: #332b27;
+  margin-top: 5px;
+}
+
+.admin-panel-icon {
+  font-size: 28px;
+}
+
+/* Recipe form */
+
+.admin-recipe-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-recipe-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  color: #514943;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-recipe-form input,
+.admin-recipe-form select,
+.admin-recipe-form textarea,
+.admin-search {
+  width: 100%;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid #e6d9d1;
+  border-radius: 10px;
+  background: #fffaf7;
+  color: #332b27;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-recipe-form input,
+.admin-recipe-form select {
+  min-height: 46px;
+}
+
+.admin-recipe-form textarea {
+  min-height: 105px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.admin-recipe-form input:focus,
+.admin-recipe-form select:focus,
+.admin-recipe-form textarea:focus,
+.admin-search:focus {
+  border-color: #f05b32;
+  box-shadow: 0 0 0 3px rgba(240, 91, 50, 0.10);
+}
+
+.admin-recipe-form input::placeholder,
+.admin-recipe-form textarea::placeholder,
+.admin-search::placeholder {
+  color: #a69a92;
+}
+
+/* Form buttons */
+
+.admin-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+.admin-form-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 13px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.admin-form-actions .primary-button {
+  background: #f05b32;
+  color: #ffffff;
+}
+
+.admin-form-actions .primary-button:hover {
+  background: #df4c25;
+  transform: translateY(-2px);
+}
+
+.admin-form-actions .secondary-button {
+  background: #f4eee9;
+  color: #514943;
+}
+
+.admin-form-actions .secondary-button:hover {
+  background: #e9ded6;
+}
+
+.admin-message {
+  padding: 12px 15px;
+  border-radius: 9px;
+  background: #eaf8ed;
+  color: #24733b;
+  font-size: 14px;
+}
+
+/* Search */
+
+.admin-search {
+  max-width: 450px;
+  margin-bottom: 20px;
+}
+
+/* Recipe list */
+
+.admin-recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-recipe-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 13px;
+  border: 1px solid #eee7e1;
+  border-radius: 12px;
+  background: #fffdfb;
+}
+
+.admin-recipe-row img {
+  width: 65px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 9px;
+  background: #f5eee9;
+  flex-shrink: 0;
+}
+
+.admin-recipe-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-recipe-details strong {
+  display: block;
+  color: #332b27;
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.admin-recipe-details small {
+  color: #81756e;
+  font-size: 12px;
+}
+
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-row-actions button {
+  border: none;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-edit-button {
+  background: #fff0e7;
+  color: #e6532d;
+}
+
+.admin-edit-button:hover {
+  background: #f05b32;
+  color: #ffffff;
+}
+
+.admin-delete-button {
+  background: #fff0f0;
+  color: #d94343;
+}
+
+.admin-delete-button:hover {
+  background: #d94343;
+  color: #ffffff;
+}
+
+/* Users table */
+
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+
+.admin-table th {
+  padding: 15px;
+  text-align: left;
+  background: #fff4ed;
+  color: #514943;
+  font-size: 13px;
+}
+
+.admin-table td {
+  padding: 15px;
+  border-bottom: 1px solid #eee7e1;
+  color: #625952;
+  font-size: 14px;
+}
+
+.admin-table tbody tr:hover {
+  background: #fffaf6;
+}
+
+.role-pill {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #fff0e7;
+  color: #e6532d;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Reviews */
+
+.admin-review-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.admin-review-card {
+  padding: 18px;
+  border: 1px solid #eee2da;
+  border-radius: 12px;
+  background: #fffdfb;
+}
+
+.admin-review-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-review-top strong {
+  color: #332b27;
+  font-size: 15px;
+}
+
+.admin-review-top span {
+  color: #e9a52d;
+  letter-spacing: 2px;
+}
+
+.admin-review-card > p {
+  margin: 12px 0;
+  color: #625952;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.admin-review-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  color: #94877e;
+  font-size: 12px;
+}
+
+/* Empty states */
+
+.admin-empty {
+  padding: 30px 15px;
+  text-align: center;
+  color: #94877e;
+  font-size: 14px;
+}
+
+/* Responsive layout */
+
+@media (max-width: 900px) {
+  .admin-dashboard {
+    padding: 30px 4%;
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-dashboard {
+    padding: 22px 15px;
+  }
+
+  .admin-welcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-welcome h1 {
+    font-size: 29px;
+  }
+
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel {
+    padding: 18px;
+  }
+
+  .admin-panel-heading h2 {
+    font-size: 23px;
+  }
+
+  .admin-tabs {
+    gap: 8px;
+  }
+
+  .admin-tabs button {
+    flex: 1;
+    padding: 11px 9px;
+    font-size: 12px;
+  }
+
+  .admin-recipe-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-recipe-details {
+    min-width: 60%;
+  }
+
+  .admin-row-actions {
+    width: 100%;
+  }
+
+  .admin-row-actions button {
+    flex: 1;
+  }
+
+  .admin-form-actions {
+    flex-direction: column;
+  }
+
+  .admin-form-actions button {
+    width: 100%;
+  }
+}

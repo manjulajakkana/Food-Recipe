@@ -1,315 +1,451 @@
+import { useEffect, useMemo, useState } from "react";
 
-import { useEffect, useState } from 'react';
-import { recipes as initialRecipes } from './data/recipes';
+import { recipes as initialRecipes } from "./data/recipes";
+import AuthModal from "./components/AuthModal";
+import Dashboard from "./components/Dashboard";
+import AdminDashboard from "./components/AdminDashboard";
 
-import Login from './components/Login';
-import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
-import AdminDashboard from './components/AdminDashboard';
+import "./App.css";
 
-import './App.css';
+const ADMIN_EMAIL = "admin@foodrecipe.demo";
+const ADMIN_PASSWORD = "Admin@123";
 
-function readStorage(key, fallback) {
+const emptyShareForm = {
+  name: "",
+  description: "",
+  category: "indian",
+  image: "",
+  ingredients: "",
+  instructions: "",
+  time: "",
+  difficulty: "Easy",
+};
+
+const readStorage = (key, fallback) => {
   try {
-    const data = JSON.parse(localStorage.getItem(key));
-    return data ?? fallback;
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
   } catch {
     return fallback;
   }
-}
-
-function initializeUsers() {
-  const savedUsers = readStorage('registeredUsers', []);
-  const users = Array.isArray(savedUsers) ? savedUsers : [];
-
-  const adminExists = users.some(
-    (user) => user.email === 'admin@foodrecipe.demo'
-  );
-
-  if (!adminExists) {
-    users.push({
-      id: 'admin-demo',
-      name: 'Food Recipe Admin',
-      email: 'admin@foodrecipe.demo',
-      password: 'Admin@123',
-      role: 'admin'
-    });
-
-    localStorage.setItem('registeredUsers', JSON.stringify(users));
-  }
-
-  return users;
-}
+};
 
 function App() {
-  // RECIPES
   const [recipeList, setRecipeList] = useState(() =>
-    readStorage('foodRecipeRecipes', initialRecipes)
+    readStorage("foodRecipeRecipes", initialRecipes)
   );
 
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-
-  // FAVORITES
   const [favorites, setFavorites] = useState(() =>
-    readStorage('favoriteRecipes', [])
+    readStorage("favoriteRecipes", [])
   );
 
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState(() =>
+    readStorage("registeredUsers", [])
+  );
 
-  // REVIEWS
   const [reviews, setReviews] = useState(() =>
-    readStorage('recipeReviews', {})
-  );
-
-  const [reviewText, setReviewText] = useState('');
-  const [reviewRating, setReviewRating] = useState(5);
-
-  // AUTHENTICATION
-  const [registeredUsers, setRegisteredUsers] = useState(
-    () => initializeUsers()
+    readStorage("recipeReviews", [])
   );
 
   const [currentUser, setCurrentUser] = useState(() =>
-    readStorage('foodRecipeCurrentUser', null)
+    readStorage("foodRecipeCurrentUser", null)
   );
 
-  const [page, setPage] = useState('home');
-  const [nextPage, setNextPage] = useState('dashboard');
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState("home");
 
-  // SHARE RECIPE FORM
-  const emptyRecipeForm = {
-    name: '',
-    description: '',
-    category: 'Indian',
-    image: '',
-    ingredients: '',
-    instructions: '',
-    time: '',
-    difficulty: 'Easy'
-  };
+  const [authMode, setAuthMode] = useState(null);
 
-  const [shareForm, setShareForm] = useState(emptyRecipeForm);
-  const [imagePreview, setImagePreview] = useState('');
-  const [imageError, setImageError] = useState('');
+  const [shareForm, setShareForm] = useState(emptyShareForm);
+  const [shareMessage, setShareMessage] = useState("");
 
-  // SAVE DATA
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    comment: "",
+  });
+
+  // Save all application data.
   useEffect(() => {
-    localStorage.setItem('foodRecipeRecipes', JSON.stringify(recipeList));
+    localStorage.setItem(
+      "foodRecipeRecipes",
+      JSON.stringify(recipeList)
+    );
   }, [recipeList]);
 
   useEffect(() => {
-    localStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
+    localStorage.setItem(
+      "favoriteRecipes",
+      JSON.stringify(favorites)
+    );
   }, [favorites]);
 
   useEffect(() => {
-    localStorage.setItem('recipeReviews', JSON.stringify(reviews));
-  }, [reviews]);
+    localStorage.setItem(
+      "registeredUsers",
+      JSON.stringify(registeredUsers)
+    );
+  }, [registeredUsers]);
 
   useEffect(() => {
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-  }, [registeredUsers]);
+    localStorage.setItem(
+      "recipeReviews",
+      JSON.stringify(reviews)
+    );
+  }, [reviews]);
 
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem(
-        'foodRecipeCurrentUser',
+        "foodRecipeCurrentUser",
         JSON.stringify(currentUser)
       );
     } else {
-      localStorage.removeItem('foodRecipeCurrentUser');
+      localStorage.removeItem("foodRecipeCurrentUser");
     }
   }, [currentUser]);
 
-  // LOGIN
-  function handleLogin(email, password) {
+  // Add the demo administrator account if it does not exist.
+  useEffect(() => {
+    setRegisteredUsers((previousUsers) => {
+      const exists = previousUsers.some(
+        (user) => user.email?.toLowerCase() === ADMIN_EMAIL
+      );
+
+      if (exists) return previousUsers;
+
+      return [
+        ...previousUsers,
+        {
+          id: "admin-user",
+          name: "Admin",
+          username: "Admin",
+          email: ADMIN_EMAIL,
+          password: ADMIN_PASSWORD,
+          role: "admin",
+        },
+      ];
+    });
+  }, []);
+
+  // Open and close the authentication popup.
+  const openLogin = () => setAuthMode("login");
+  const openSignup = () => setAuthMode("signup");
+  const closeAuth = () => setAuthMode(null);
+
+  // Login.
+  const handleLogin = (email, password) => {
+    const cleanEmail = String(email || "").trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
+      return {
+        success: false,
+        message: "Please enter your email and password.",
+      };
+    }
+
+    // Administrator login.
+    if (
+      cleanEmail === ADMIN_EMAIL &&
+      password === ADMIN_PASSWORD
+    ) {
+      setCurrentUser({
+        id: "admin-user",
+        name: "Admin",
+        username: "Admin",
+        email: ADMIN_EMAIL,
+        role: "admin",
+      });
+
+      setCurrentPage("admin");
+      setAuthMode(null);
+
+      return {
+        success: true,
+        message: "Admin login successful!",
+      };
+    }
+
+    // Normal user login.
     const user = registeredUsers.find(
       (item) =>
-        item.email.toLowerCase() === email.trim().toLowerCase() &&
+        item.email?.toLowerCase() === cleanEmail &&
         item.password === password
     );
 
     if (!user) {
       return {
         success: false,
-        message: 'Invalid email or password.'
+        message: "Invalid email or password.",
       };
     }
 
     setCurrentUser({
       id: user.id,
       name: user.name,
+      username: user.username || user.name,
       email: user.email,
-      role: user.role
+      role: "user",
     });
 
-    setPage(nextPage);
-    return { success: true };
-  }
+    setCurrentPage("home");
+    setAuthMode(null);
 
-  // SIGNUP
-  function handleSignup(name, email, password) {
-    const cleanName = name.trim();
-    const cleanEmail = email.trim().toLowerCase();
+    return {
+      success: true,
+      message: "Login successful!",
+    };
+  };
 
-    if (password.length < 6) {
+  // Signup.
+  const handleSignup = (name, email, password) => {
+    const cleanName = String(name || "").trim();
+    const cleanEmail = String(email || "").trim().toLowerCase();
+
+    if (!cleanName || !cleanEmail || !password) {
       return {
         success: false,
-        message: 'Password must contain at least 6 characters.'
+        message: "Please fill in all the fields.",
       };
     }
 
-    const emailExists = registeredUsers.some(
-      (user) => user.email.toLowerCase() === cleanEmail
-    );
-
-    if (emailExists) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return {
         success: false,
-        message: 'This email is already registered. Please login.'
+        message: "Please enter a valid email address.",
+      };
+    }
+
+    if (String(password).length < 6) {
+      return {
+        success: false,
+        message: "Password must contain at least 6 characters.",
+      };
+    }
+
+    const alreadyExists = registeredUsers.some(
+      (user) => user.email?.toLowerCase() === cleanEmail
+    );
+
+    if (alreadyExists) {
+      return {
+        success: false,
+        message: "This email is already registered.",
       };
     }
 
     const newUser = {
-      id: Date.now().toString(),
+      id: Date.now(),
       name: cleanName,
+      username: cleanName,
       email: cleanEmail,
       password,
-      role: 'user'
+      role: "user",
     };
 
-    setRegisteredUsers((previous) => [...previous, newUser]);
+    setRegisteredUsers((previousUsers) => [
+      ...previousUsers,
+      newUser,
+    ]);
 
     setCurrentUser({
       id: newUser.id,
       name: newUser.name,
+      username: newUser.username,
       email: newUser.email,
-      role: newUser.role
+      role: "user",
     });
 
-    setPage(nextPage);
-    return { success: true };
-  }
+    setCurrentPage("home");
+    setAuthMode(null);
 
-  // LOGOUT
-  function handleLogout() {
+    return {
+      success: true,
+      message: "Account created successfully!",
+    };
+  };
+
+  // Logout.
+  const handleLogout = () => {
     setCurrentUser(null);
-    setPage('home');
+    setCurrentPage("home");
     setSelectedRecipe(null);
     setShowFavorites(false);
-    alert('You have logged out successfully!');
-  }
+    setAuthMode(null);
+  };
 
-  // ADMIN RECIPE FUNCTIONS
-  function handleAddRecipe(newRecipe) {
-    setRecipeList((previous) => [
-      ...previous,
-      { ...newRecipe, id: Date.now() }
-    ]);
-  }
+  // Go to homepage.
+  const openHome = () => {
+    setCurrentPage("home");
+    setSelectedRecipe(null);
+    setShowFavorites(false);
+    setSelectedCategory("all");
+    setSearchText("");
+  };
 
-  function handleUpdateRecipe(id, updatedRecipe) {
+  // Add or remove favourites.
+  const toggleFavorite = (recipeId) => {
+    setFavorites((previous) => {
+      if (previous.includes(recipeId)) {
+        return previous.filter((id) => id !== recipeId);
+      }
+
+      return [...previous, recipeId];
+    });
+  };
+
+  // Delete a recipe shared by the logged-in user.
+  const handleDeleteSharedRecipe = (recipe) => {
+    if (!currentUser) {
+      openLogin();
+      return;
+    }
+
+    if (recipe.sharedByEmail !== currentUser.email) {
+      alert("You can delete only recipes shared by your account.");
+      return;
+    }
+
+    if (!window.confirm(`Delete "${recipe.name}"?`)) return;
+
+    removeRecipe(recipe.id);
+  };
+
+  // Common recipe deletion function.
+  const removeRecipe = (recipeId) => {
     setRecipeList((previous) =>
-      previous.map((recipe) =>
-        recipe.id === id ? { ...recipe, ...updatedRecipe } : recipe
-      )
-    );
-  }
-
-  function handleDeleteRecipe(id) {
-    setRecipeList((previous) =>
-      previous.filter((recipe) => recipe.id !== id)
+      previous.filter((recipe) => recipe.id !== recipeId)
     );
 
     setFavorites((previous) =>
-      previous.filter((recipeId) => recipeId !== id)
+      previous.filter((id) => id !== recipeId)
     );
 
-    setReviews((previous) => {
-      const updated = { ...previous };
-      delete updated[id];
-      return updated;
-    });
+    setReviews((previous) =>
+      previous.filter((review) => review.recipeId !== recipeId)
+    );
 
     setSelectedRecipe((previous) =>
-      previous?.id === id ? null : previous
+      previous?.id === recipeId ? null : previous
     );
-  }
+  };
 
-  // OPEN SHARE PAGE
-  function openSharePage() {
+  // Admin delete callback.
+  // Confirmation is already handled inside AdminDashboard.
+  const handleDeleteRecipe = (recipeId) => {
+    removeRecipe(recipeId);
+  };
+
+  // Add recipe from the admin dashboard.
+  const handleAddRecipe = (newRecipe) => {
+    const recipeToAdd = {
+      ...newRecipe,
+      id: Date.now(),
+      ingredients: Array.isArray(newRecipe.ingredients)
+        ? newRecipe.ingredients
+        : String(newRecipe.ingredients || "")
+            .split(/[\n,]+/)
+            .map((item) => item.trim())
+            .filter(Boolean),
+      instructions: Array.isArray(newRecipe.instructions)
+        ? newRecipe.instructions
+        : String(newRecipe.instructions || "")
+            .split("\n")
+            .map((item) => item.trim())
+            .filter(Boolean),
+      author: "Admin",
+    };
+
+    setRecipeList((previous) => [
+      recipeToAdd,
+      ...previous,
+    ]);
+  };
+
+  // Update recipe from the admin dashboard.
+  const handleUpdateRecipe = (updatedRecipe) => {
+    setRecipeList((previous) =>
+      previous.map((recipe) =>
+        recipe.id === updatedRecipe.id
+          ? {
+              ...recipe,
+              ...updatedRecipe,
+              ingredients: Array.isArray(updatedRecipe.ingredients)
+                ? updatedRecipe.ingredients
+                : recipe.ingredients,
+              instructions: Array.isArray(updatedRecipe.instructions)
+                ? updatedRecipe.instructions
+                : recipe.instructions,
+            }
+          : recipe
+      )
+    );
+  };
+
+  // Open share recipe page.
+  const openSharePage = () => {
     if (!currentUser) {
-      setNextPage('share');
-      setPage('login');
+      openLogin();
       return;
     }
 
-    if (currentUser.role === 'admin') {
-      alert('Please use a normal user account to share recipes.');
-      return;
-    }
+    setShareForm(emptyShareForm);
+    setShareMessage("");
+    setCurrentPage("share");
+  };
 
-    setPage('share');
-  }
-
-  // FORM INPUT
-  function handleShareInput(event) {
+  // Share form input.
+  const handleShareInput = (event) => {
     const { name, value } = event.target;
 
     setShareForm((previous) => ({
       ...previous,
-      [name]: value
+      [name]: value,
     }));
-  }
+  };
 
-  // CHOOSE IMAGE FROM COMPUTER
-  function handleImageSelection(event) {
+  // Upload recipe image.
+  const handleShareImage = (event) => {
     const file = event.target.files?.[0];
-
-    setImageError('');
 
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setImageError('Please select a valid image file.');
-      event.target.value = '';
-      return;
-    }
-
-    // Limit image size to 2 MB for Local Storage
-    if (file.size > 2 * 1024 * 1024) {
-      setImageError('Image must be smaller than 2 MB.');
-      event.target.value = '';
+    if (!file.type.startsWith("image/")) {
+      setShareMessage("Please select a valid image.");
       return;
     }
 
     const reader = new FileReader();
 
     reader.onload = () => {
-      const imageData = reader.result;
-
       setShareForm((previous) => ({
         ...previous,
-        image: imageData
+        image: reader.result,
       }));
-
-      setImagePreview(imageData);
-    };
-
-    reader.onerror = () => {
-      setImageError('Unable to read this image. Please try another file.');
     };
 
     reader.readAsDataURL(file);
-  }
+  };
 
-  // PUBLISH SHARED RECIPE
-  function submitSharedRecipe(event) {
+  // Publish a shared recipe.
+  const submitSharedRecipe = (event) => {
     event.preventDefault();
 
-    if (!currentUser || currentUser.role !== 'user') {
-      alert('Please login with a normal user account.');
+    if (!currentUser) {
+      openLogin();
+      return;
+    }
+
+    if (
+      !shareForm.name.trim() ||
+      !shareForm.description.trim() ||
+      !shareForm.ingredients.trim() ||
+      !shareForm.instructions.trim()
+    ) {
+      setShareMessage("Please fill in all required fields.");
       return;
     }
 
@@ -318,712 +454,850 @@ function App() {
       name: shareForm.name.trim(),
       description: shareForm.description.trim(),
       category: shareForm.category,
-      image: shareForm.image || '',
+      craving: "",
+      image: shareForm.image || "images/pizza.jpg",
       ingredients: shareForm.ingredients
-        .split('\n')
+        .split(/[\n,]+/)
         .map((item) => item.trim())
         .filter(Boolean),
-      instructions: shareForm.instructions.trim(),
-      time: shareForm.time.trim(),
+      instructions: shareForm.instructions
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      time: shareForm.time.trim() || "30 min",
       difficulty: shareForm.difficulty,
-      rating: 'Not rated',
+      rating: "New",
+      author: currentUser.name,
       sharedBy: currentUser.name,
       sharedByEmail: currentUser.email,
-      isShared: true
+      isShared: true,
     };
 
-    if (
-      !newRecipe.name ||
-      !newRecipe.description ||
-      !newRecipe.ingredients.length ||
-      !newRecipe.instructions ||
-      !newRecipe.time
-    ) {
-      alert('Please fill in all required fields.');
-      return;
-    }
+    setRecipeList((previous) => [
+      newRecipe,
+      ...previous,
+    ]);
 
-    setRecipeList((previous) => [...previous, newRecipe]);
+    setShareForm(emptyShareForm);
+    setShareMessage("");
+    setCurrentPage("home");
 
-    setShareForm(emptyRecipeForm);
-    setImagePreview('');
-    setImageError('');
-    setSelectedCategory('All');
-    setSearch('');
-    setShowFavorites(false);
-    setPage('home');
+    alert("Your recipe has been shared successfully!");
+  };
 
-    alert('Your recipe has been shared successfully!');
-  }
-
-  // DELETE OWN SHARED RECIPE
-  function deleteSharedRecipe(recipe) {
-    if (!currentUser || !recipe.isShared) return;
-
-    if (recipe.sharedByEmail !== currentUser.email) {
-      alert('You can only delete recipes shared by your account.');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${recipe.name}"?`
-    );
-
-    if (!confirmed) return;
-
-    handleDeleteRecipe(recipe.id);
-
-    alert('Your shared recipe has been deleted.');
-  }
-
-  // CATEGORIES
-  const categories = [
-    'All',
-    ...new Set(
-      recipeList.map((recipe) => recipe.category || 'Other')
-    )
-  ];
-
-  // FAVORITES
-  function toggleFavorite(recipeId) {
-    setFavorites((previous) =>
-      previous.includes(recipeId)
-        ? previous.filter((id) => id !== recipeId)
-        : [...previous, recipeId]
-    );
-  }
-
-  // REVIEWS
-  function submitReview(event) {
+  // Submit review.
+  const submitReview = (event) => {
     event.preventDefault();
 
-    if (!selectedRecipe || !reviewText.trim()) {
-      alert('Please write a review before submitting.');
+    if (!currentUser) {
+      openLogin();
       return;
     }
 
-    const recipeId = selectedRecipe.id;
+    if (!reviewForm.comment.trim()) {
+      alert("Please write your review.");
+      return;
+    }
+
+    if (!selectedRecipe) return;
 
     const newReview = {
       id: Date.now(),
-      rating: Number(reviewRating),
-      comment: reviewText.trim(),
-      date: new Date().toLocaleDateString()
+      recipeId: selectedRecipe.id,
+      userName: currentUser.name,
+      rating: Number(reviewForm.rating),
+      comment: reviewForm.comment.trim(),
+      date: new Date().toLocaleDateString(),
     };
 
-    setReviews((previous) => ({
+    setReviews((previous) => [
       ...previous,
-      [recipeId]: [
-        ...(previous[recipeId] || []),
-        newReview
-      ]
-    }));
+      newReview,
+    ]);
 
-    setReviewText('');
-    setReviewRating(5);
+    setReviewForm({
+      rating: 5,
+      comment: "",
+    });
+  };
 
-    alert('Your review has been submitted successfully!');
-  }
+  // Filter recipes.
+  const visibleRecipes = useMemo(() => {
+    return recipeList.filter((recipe) => {
+      const search = searchText.toLowerCase();
 
-  // SEARCH AND FILTER
-  const filteredRecipes = recipeList.filter((recipe) => {
-    const searchText = search.toLowerCase();
+      const ingredients = Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.join(" ").toLowerCase()
+        : String(recipe.ingredients || "").toLowerCase();
 
-    const name = String(recipe.name || '').toLowerCase();
-    const description = String(recipe.description || '').toLowerCase();
+      const matchesSearch =
+        recipe.name?.toLowerCase().includes(search) ||
+        recipe.description?.toLowerCase().includes(search) ||
+        recipe.category?.toLowerCase().includes(search) ||
+        ingredients.includes(search);
 
-    const ingredients = Array.isArray(recipe.ingredients)
-      ? recipe.ingredients.join(' ').toLowerCase()
-      : String(recipe.ingredients || '').toLowerCase();
+      const category = String(recipe.category || "").toLowerCase();
 
-    const category = String(recipe.category || 'Other');
+      const matchesCategory =
+        selectedCategory === "all" ||
+        category === selectedCategory.toLowerCase() ||
+        category.replace(/\s/g, "") === selectedCategory.toLowerCase();
 
-    return (
-      (
-        name.includes(searchText) ||
-        description.includes(searchText) ||
-        ingredients.includes(searchText)
-      ) &&
-      (
-        selectedCategory === 'All' ||
-        category === selectedCategory
-      ) &&
-      (
-        !showFavorites ||
-        favorites.includes(recipe.id)
+      const matchesFavorite =
+        !showFavorites || favorites.includes(recipe.id);
+
+      return matchesSearch && matchesCategory && matchesFavorite;
+    });
+  }, [
+    recipeList,
+    searchText,
+    selectedCategory,
+    showFavorites,
+    favorites,
+  ]);
+
+  const selectedRecipeReviews = selectedRecipe
+    ? reviews.filter(
+        (review) => review.recipeId === selectedRecipe.id
       )
-    );
-  });
-
-  // IMAGE PATH
-  function getImagePath(image) {
-    if (!image) return '/images/placeholder.jpg';
-
-    if (
-      image.startsWith('http://') ||
-      image.startsWith('https://') ||
-      image.startsWith('data:')
-    ) {
-      return image;
-    }
-
-    return image.startsWith('/') ? image : '/' + image;
-  }
-
-  // SELECTED RECIPE REVIEWS
-  const selectedReviews = selectedRecipe
-    ? reviews[selectedRecipe.id] || []
     : [];
 
-  const averageRating = selectedReviews.length
-    ? (
-        selectedReviews.reduce(
-          (total, review) => total + review.rating,
-          0
-        ) / selectedReviews.length
-      ).toFixed(1)
-    : null;
+  // Include administrator in the registered users table.
+  const adminUser = {
+    id: "admin-user",
+    name: "Admin",
+    username: "Admin",
+    email: ADMIN_EMAIL,
+    role: "admin",
+  };
+
+  const adminAndRegisteredUsers = [
+    adminUser,
+    ...registeredUsers.filter(
+      (user) => user.email?.toLowerCase() !== ADMIN_EMAIL
+    ),
+  ];
+
+  // Admin dashboard.
+  if (currentPage === "admin" && currentUser?.role === "admin") {
+    return (
+      <AdminDashboard
+        recipes={recipeList}
+        registeredUsers={adminAndRegisteredUsers}
+        reviews={reviews}
+        onAddRecipe={handleAddRecipe}
+        onUpdateRecipe={handleUpdateRecipe}
+        onDeleteRecipe={handleDeleteRecipe}
+        onLogout={handleLogout}
+        onHome={openHome}
+      />
+    );
+  }
+
+  // Normal user dashboard.
+  if (currentPage === "dashboard" && currentUser) {
+    return (
+      <Dashboard
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onHome={openHome}
+      />
+    );
+  }
 
   return (
-    <div className="app">
+    <div className={`app ${darkMode ? "app-dark" : ""}`}>
 
       {/* HEADER */}
-      <header className="header">
-        <h1>🍴 The Food Recipe</h1>
-        <p>Discover delicious recipes and cooking inspiration!</p>
+      <header className="site-header">
+        <div className="header-inner">
 
-        <div className="header-actions">
-          <button
-            className="auth-nav-button"
-            onClick={() => setPage('home')}
-          >
-            Home
+          <button className="brand" onClick={openHome}>
+            <span className="brand-icon">🍽️</span>
+            <span>The Food Recipe</span>
           </button>
 
-          {currentUser ? (
-            <>
-              {currentUser.role === 'user' && (
+          <nav className="main-nav">
+            <button onClick={openHome}>Home</button>
+
+            <button
+              onClick={() =>
+                document
+                  .getElementById("recipes")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              Recipes
+            </button>
+
+            <button onClick={openSharePage}>
+              Share Recipe
+            </button>
+          </nav>
+
+          <div className="header-actions">
+
+            <button
+              className="header-favorite"
+              onClick={() => {
+                setCurrentPage("home");
+                setShowFavorites((previous) => !previous);
+                document
+                  .getElementById("recipes")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              title="Show favourites"
+            >
+              ♥ {favorites.length}
+            </button>
+
+            <button
+              className="theme-toggle"
+              onClick={() => setDarkMode((previous) => !previous)}
+              title="Change theme"
+            >
+              {darkMode ? "☀️" : "🌙"}
+            </button>
+
+            {currentUser ? (
+              <>
                 <button
-                  className="auth-nav-button"
-                  onClick={openSharePage}
+                  className="account-button"
+                  onClick={() => setCurrentPage("dashboard")}
                 >
-                  ➕ Share Your Recipe
+                  👤 {currentUser.name}
                 </button>
-              )}
 
+                <button
+                  className="login-button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
               <button
-                className="auth-nav-button"
-                onClick={() => setPage('dashboard')}
+                className="login-button"
+                onClick={openLogin}
               >
-                My Dashboard
+                👤 Login
               </button>
+            )}
 
-              <button
-                className="auth-nav-button"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className="auth-nav-button"
-                onClick={() => {
-                  setNextPage('dashboard');
-                  setPage('login');
-                }}
-              >
-                Login
-              </button>
-
-              <button
-                className="auth-nav-button"
-                onClick={() => {
-                  setNextPage('dashboard');
-                  setPage('signup');
-                }}
-              >
-                Sign Up
-              </button>
-            </>
-          )}
+          </div>
         </div>
       </header>
 
-      {/* LOGIN */}
-      {page === 'login' && !currentUser && (
-        <Login
-          onLogin={handleLogin}
-          onSwitchToSignup={() => setPage('signup')}
-        />
-      )}
+      {/* HOME PAGE */}
+      {currentPage === "home" && (
+        <main>
 
-      {/* SIGNUP */}
-      {page === 'signup' && !currentUser && (
-        <Signup
-          onSignup={handleSignup}
-          onSwitchToLogin={() => setPage('login')}
-        />
-      )}
+          {/* HERO */}
+          <section className="hero-section">
+            <div className="hero-content">
 
-      {/* DASHBOARD */}
-      {page === 'dashboard' && currentUser && (
-        currentUser.role === 'admin' ? (
-          <AdminDashboard
-            recipes={recipeList}
-            registeredUsers={registeredUsers}
-            reviews={reviews}
-            onAddRecipe={handleAddRecipe}
-            onUpdateRecipe={handleUpdateRecipe}
-            onDeleteRecipe={handleDeleteRecipe}
-          />
-        ) : (
-          <Dashboard
-            currentUser={currentUser}
-            onLogout={handleLogout}
-          />
-        )
+              <p className="hero-eyebrow">
+                WELCOME TO THE FOOD RECIPE
+              </p>
+
+              <h1>
+                Discover delicious food.
+                <br />
+                Discover happiness.
+              </h1>
+
+              <p>
+                Delicious recipes, easy cooking and food inspiration
+                all in one place.
+              </p>
+
+              <div className="hero-search">
+                <input
+                  type="text"
+                  placeholder="Search for biryani, pizza, cake..."
+                  value={searchText}
+                  onChange={(event) =>
+                    setSearchText(event.target.value)
+                  }
+                />
+
+                <button
+                  onClick={() =>
+                    document
+                      .getElementById("recipes")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  🔍 Search
+                </button>
+              </div>
+
+              <button
+                className="primary-button"
+                onClick={openSharePage}
+              >
+                + Share Your Recipe
+              </button>
+
+            </div>
+
+            <div className="hero-image-area">
+              <div className="hero-image-frame">
+                <img
+                  src="images/biryani.jpg"
+                  alt="Delicious food"
+                  onError={(event) => {
+                    event.currentTarget.src = "images/pizza.jpg";
+                  }}
+                />
+              </div>
+
+              <div className="hero-floating-card">
+                <strong>{recipeList.length}+</strong>
+                <span>Delicious recipes</span>
+              </div>
+            </div>
+          </section>
+
+          {/* CRAVINGS */}
+          <section className="craving-section">
+            <div className="section-heading">
+              <p className="hero-eyebrow">EXPLORE BY TASTE</p>
+              <h2>What are you craving? 😊</h2>
+              <p>Tell us what your taste buds want today.</p>
+            </div>
+
+            <div className="craving-options">
+              {[
+                { name: "Spicy", emoji: "🌶️" },
+                { name: "Sweet", emoji: "🍰" },
+                { name: "Healthy", emoji: "🥗" },
+                { name: "Cheesy", emoji: "🧀" },
+                { name: "Fresh", emoji: "🥑" },
+                { name: "Savory", emoji: "🍟" },
+              ].map((item) => (
+                <button
+                  className="craving-option"
+                  key={item.name}
+                  onClick={() => {
+                    setSearchText(item.name);
+                    setSelectedCategory("all");
+                    setShowFavorites(false);
+
+                    document
+                      .getElementById("recipes")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <span>{item.emoji}</span>
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* RECIPE COLLECTION */}
+          <section className="recipes-section" id="recipes">
+
+            <div className="section-heading">
+              <p className="hero-eyebrow">OUR COLLECTION</p>
+
+              <h2>
+                {showFavorites
+                  ? "Your Favourite Recipes"
+                  : "Explore Our Recipes"}
+              </h2>
+
+              <p>
+                Discover tasty recipes and find your next favourite dish.
+              </p>
+            </div>
+
+            <div className="recipe-toolbar">
+              <div className="category-buttons">
+                {[
+                  ["all", "All"],
+                  ["indian", "Indian"],
+                  ["chinese", "Chinese"],
+                  ["fastfood", "Fast Food"],
+                  ["italian", "Italian"],
+                  ["dessert", "Desserts"],
+                  ["healthy", "Healthy"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    className={
+                      selectedCategory === value ? "active" : ""
+                    }
+                    onClick={() => {
+                      setSelectedCategory(value);
+                      setShowFavorites(false);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="favorites-filter"
+                onClick={() =>
+                  setShowFavorites((previous) => !previous)
+                }
+              >
+                {showFavorites
+                  ? "Show All Recipes"
+                  : "♥ My Favourites"}
+              </button>
+            </div>
+
+            <div className="recipe-search-row">
+              <input
+                type="text"
+                placeholder="Search recipes or ingredients..."
+                value={searchText}
+                onChange={(event) =>
+                  setSearchText(event.target.value)
+                }
+              />
+            </div>
+
+            <div className="recipe-grid">
+              {visibleRecipes.map((recipe) => {
+                const isFavorite = favorites.includes(recipe.id);
+
+                const isOwner =
+                  currentUser &&
+                  recipe.isShared &&
+                  recipe.sharedByEmail === currentUser.email;
+
+                return (
+                  <article className="recipe-card" key={recipe.id}>
+
+                    <div className="recipe-image-wrap">
+                      <img
+                        className="recipe-image"
+                        src={recipe.image || "images/pizza.jpg"}
+                        alt={recipe.name}
+                        onError={(event) => {
+                          event.currentTarget.src = "images/pizza.jpg";
+                        }}
+                      />
+
+                      <span className="recipe-category">
+                        {recipe.category}
+                      </span>
+
+                      <button
+                        className={`favorite-button ${
+                          isFavorite ? "is-favorite" : ""
+                        }`}
+                        onClick={() => toggleFavorite(recipe.id)}
+                        title="Add or remove favourite"
+                      >
+                        {isFavorite ? "♥" : "♡"}
+                      </button>
+                    </div>
+
+                    <div className="recipe-info">
+                      <h3>{recipe.name}</h3>
+
+                      <p>{recipe.description}</p>
+
+                      {recipe.isShared && (
+                        <p className="shared-by">
+                          Shared by {recipe.sharedBy || "A user"}
+                        </p>
+                      )}
+
+                      <div className="recipe-rating">
+                        <span>★</span>
+                        {recipe.rating || "New recipe"}
+                      </div>
+
+                      <div className="recipe-meta">
+                        <span>⏱ {recipe.time || "30 min"}</span>
+                        <span>🍳 {recipe.difficulty || "Easy"}</span>
+                      </div>
+
+                      <div className="recipe-card-actions">
+                        <button
+                          className="view-button"
+                          onClick={() => setSelectedRecipe(recipe)}
+                        >
+                          View Recipe
+                        </button>
+
+                        {isOwner && (
+                          <button
+                            className="delete-shared-button"
+                            onClick={() =>
+                              handleDeleteSharedRecipe(recipe)
+                            }
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                  </article>
+                );
+              })}
+            </div>
+
+            {visibleRecipes.length === 0 && (
+              <div className="empty-state">
+                <h3>No recipes found</h3>
+                <p>
+                  Try another search or select a different category.
+                </p>
+
+                <button
+                  className="secondary-button"
+                  onClick={() => {
+                    setSearchText("");
+                    setSelectedCategory("all");
+                    setShowFavorites(false);
+                  }}
+                >
+                  Show All Recipes
+                </button>
+              </div>
+            )}
+
+          </section>
+
+          {/* SHARE BANNER */}
+          <section className="share-banner">
+            <h2>Have a delicious recipe to share?</h2>
+
+            <p>
+              Share your cooking ideas and let others discover your
+              favourite dishes.
+            </p>
+
+            <button
+              className="primary-button"
+              onClick={openSharePage}
+            >
+              Share Your Recipe
+            </button>
+          </section>
+
+        </main>
       )}
 
       {/* SHARE RECIPE PAGE */}
-      {page === 'share' && currentUser?.role === 'user' && (
-        <main className="main">
-          <div className="share-recipe-container">
+      {currentPage === "share" && (
+        <main className="share-page">
 
-            <h2>🍲 Share Your Recipe</h2>
+          <div className="section-heading">
+            <p className="hero-eyebrow">COMMUNITY RECIPES</p>
+            <h2>Share Your Recipe</h2>
+            <p>Tell everyone about your delicious creation.</p>
+          </div>
 
-            <p>Share your favorite homemade dish with everyone!</p>
+          <form
+            className="share-form"
+            onSubmit={submitSharedRecipe}
+          >
 
-            <form
-              onSubmit={submitSharedRecipe}
-              className="share-recipe-form"
-            >
-              <label>Recipe Name *</label>
-              <input
-                name="name"
-                value={shareForm.name}
-                onChange={handleShareInput}
-                placeholder="Enter recipe name"
-                required
-              />
+            <div className="form-grid">
+              <label>
+                Recipe Name *
+                <input
+                  name="name"
+                  value={shareForm.name}
+                  onChange={handleShareInput}
+                  placeholder="Enter recipe name"
+                  required
+                />
+              </label>
 
-              <label>Description *</label>
+              <label>
+                Category *
+                <select
+                  name="category"
+                  value={shareForm.category}
+                  onChange={handleShareInput}
+                >
+                  <option value="indian">Indian</option>
+                  <option value="chinese">Chinese</option>
+                  <option value="fastfood">Fast Food</option>
+                  <option value="italian">Italian</option>
+                  <option value="dessert">Dessert</option>
+                  <option value="healthy">Healthy</option>
+                </select>
+              </label>
+
+              <label>
+                Preparation Time
+                <input
+                  name="time"
+                  value={shareForm.time}
+                  onChange={handleShareInput}
+                  placeholder="Example: 30 min"
+                />
+              </label>
+
+              <label>
+                Difficulty
+                <select
+                  name="difficulty"
+                  value={shareForm.difficulty}
+                  onChange={handleShareInput}
+                >
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Description *
               <textarea
                 name="description"
                 value={shareForm.description}
                 onChange={handleShareInput}
-                placeholder="Write a short description"
+                placeholder="Write a short description..."
+                rows="3"
                 required
               />
+            </label>
 
-              <label>Category</label>
-              <select
-                name="category"
-                value={shareForm.category}
-                onChange={handleShareInput}
-              >
-                <option>Indian</option>
-                <option>South Indian</option>
-                <option>North Indian</option>
-                <option>Chinese</option>
-                <option>Italian</option>
-                <option>Mexican</option>
-                <option>Dessert</option>
-                <option>Breakfast</option>
-                <option>Snacks</option>
-                <option>Other</option>
-              </select>
-
-              {/* IMAGE FILE PICKER */}
-              <label htmlFor="recipe-image">
-                Choose Recipe Image
-              </label>
-
-              <input
-                id="recipe-image"
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                onChange={handleImageSelection}
-              />
-
-              <small>
-                Choose a JPG, PNG, or WEBP image from your computer.
-                Maximum file size: 2 MB.
-              </small>
-
-              {imageError && (
-                <p className="image-error">{imageError}</p>
-              )}
-
-              {imagePreview && (
-                <div className="image-preview-container">
-                  <p>Selected Image Preview:</p>
-
-                  <img
-                    src={imagePreview}
-                    alt="Selected recipe preview"
-                    className="share-image-preview"
-                  />
-
-                  <button
-                    type="button"
-                    className="remove-image-button"
-                    onClick={() => {
-                      setImagePreview('');
-                      setShareForm((previous) => ({
-                        ...previous,
-                        image: ''
-                      }));
-
-                      const input = document.getElementById('recipe-image');
-                      if (input) input.value = '';
-                    }}
-                  >
-                    Remove Image
-                  </button>
-                </div>
-              )}
-
-              <label>Cooking Time *</label>
-              <input
-                name="time"
-                value={shareForm.time}
-                onChange={handleShareInput}
-                placeholder="Example: 30 minutes"
-                required
-              />
-
-              <label>Difficulty</label>
-              <select
-                name="difficulty"
-                value={shareForm.difficulty}
-                onChange={handleShareInput}
-              >
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Hard</option>
-              </select>
-
-              <label>Ingredients * (one ingredient per line)</label>
+            <label>
+              Ingredients *
               <textarea
                 name="ingredients"
                 value={shareForm.ingredients}
                 onChange={handleShareInput}
+                placeholder={"Rice\nTomatoes\nOnions"}
                 rows="5"
-                placeholder={'2 cups rice\n1 onion\n1 tomato\nSpices'}
                 required
               />
+            </label>
 
-              <label>Preparation Instructions *</label>
+            <label>
+              Preparation Instructions *
               <textarea
                 name="instructions"
                 value={shareForm.instructions}
                 onChange={handleShareInput}
+                placeholder={"Prepare the ingredients.\nCook everything together."}
                 rows="6"
-                placeholder="Write the preparation steps..."
                 required
               />
+            </label>
 
-              <button type="submit" className="share-main-button">
-                Publish Recipe
-              </button>
+            <label>
+              Recipe Image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleShareImage}
+              />
+            </label>
 
+            {shareForm.image && (
+              <div className="share-image-preview">
+                <img
+                  src={shareForm.image}
+                  alt="Recipe preview"
+                />
+              </div>
+            )}
+
+            {shareMessage && (
+              <p className="auth-error">{shareMessage}</p>
+            )}
+
+            <div className="share-form-actions">
               <button
                 type="button"
-                className="share-cancel-button"
-                onClick={() => setPage('home')}
+                className="secondary-button"
+                onClick={openHome}
               >
                 Cancel
               </button>
-            </form>
-          </div>
+
+              <button
+                type="submit"
+                className="primary-button"
+              >
+                Publish Recipe
+              </button>
+            </div>
+
+          </form>
         </main>
       )}
 
-      {/* HOMEPAGE */}
-      {(page === 'home' ||
-        (page === 'dashboard' && currentUser?.role !== 'admin')) && (
-        <main className="main">
-          {/* HERO SECTION */}
-          <section className="hero-section">
-            <h2 className="hero-title">
-              Discover Food.
-              <span>Discover Happiness.</span>
-            </h2>
-            <p className="hero-description">
-              Delicious recipes, irresistible flavours, and cooking inspiration — all in one place.
-            </p>
+      {/* RECIPE DETAILS POPUP */}
+      {selectedRecipe && (
+        <div
+          className="recipe-modal-backdrop"
+          onClick={() => setSelectedRecipe(null)}
+        >
+          <div
+            className="recipe-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
 
-            <div className="hero-search-wrapper">
-              <input
-                type="text"
-                className="search-box"
-                placeholder="Search for biryani, pizza, pasta..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              <button
-                type="button"
-                className="hero-search-button"
-                onClick={() => document.getElementById('recipes-section')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                🔍 Search
-              </button>
-            </div>
-
-            <div className="craving-section">
-              <h2>What are you craving? 😊</h2>
-              <p>Tell us what your taste buds want today.</p>
-              <div className="craving-options">
-                <button type="button" onClick={() => { setSearch('spicy'); setSelectedCategory('All'); setShowFavorites(false); }}>🌶️ Spicy</button>
-                <button type="button" onClick={() => { setSearch('cheese'); setSelectedCategory('All'); setShowFavorites(false); }}>🧀 Cheesy</button>
-                <button type="button" onClick={() => { setSearch('sweet'); setSelectedCategory('All'); setShowFavorites(false); }}>🍫 Sweet</button>
-                <button type="button" onClick={() => { setSearch(''); setSelectedCategory('All'); setShowFavorites(false); }}>✨ Surprise Me</button>
-              </div>
-            </div>
-
-            <div className="share-recipe-banner">
-              <h2>🍲 Have a Recipe to Share?</h2>
-              <p>Share your favorite homemade dishes with our food community!</p>
-              <button type="button" className="share-main-button" onClick={openSharePage}>
-                ➕ SHARE YOUR RECIPE
-              </button>
-              {!currentUser && <p className="share-login-note">Login or sign up to publish your recipe.</p>}
-            </div>
-          </section>
-
-          <section id="recipes-section" className="recipes-section">
-            <h2>Explore Our Delicious Recipes</h2>
-            <p className="recipes-subtitle">Find your favorite dishes and discover something new.</p>
-          </section>
-
-          {/* CATEGORY FILTER */}
-          <div className="category-buttons">
-            {categories.map((category) => (
-              <button
-                key={category}
-                className={
-                  selectedCategory === category ? 'active' : ''
-                }
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setShowFavorites(false);
-                }}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-
-          {/* FAVORITES */}
-          <div className="favorites-filter">
             <button
-              className={showFavorites ? 'active' : ''}
-              onClick={() => setShowFavorites(!showFavorites)}
+              className="modal-close"
+              onClick={() => setSelectedRecipe(null)}
+              aria-label="Close recipe"
             >
-              ❤️ {showFavorites ? 'Show All Recipes' : 'My Favorites'}
-              {' '}({favorites.length})
+              ×
             </button>
-          </div>
 
-          {/* RECIPE CARDS */}
-          <div className="recipe-grid">
-            {filteredRecipes.length > 0 ? (
-              filteredRecipes.map((recipe) => (
-                <div className="recipe-card" key={recipe.id}>
+            <img
+              className="modal-recipe-image"
+              src={selectedRecipe.image || "images/pizza.jpg"}
+              alt={selectedRecipe.name}
+              onError={(event) => {
+                event.currentTarget.src = "images/pizza.jpg";
+              }}
+            />
 
-                  <img
-                    src={getImagePath(recipe.image)}
-                    alt={recipe.name || 'Recipe'}
-                  />
-
-                  <div className="recipe-info">
-                    <h3>{recipe.name || 'Unnamed Recipe'}</h3>
-
-                    {recipe.isShared && (
-                      <p className="shared-by-label">
-                        👤 Shared by {recipe.sharedBy}
-                      </p>
-                    )}
-
-                    <p>
-                      {recipe.description || 'No description available.'}
-                    </p>
-
-                    <p>⭐ {recipe.rating ?? 'Not rated'}</p>
-                    <p>⏱️ {recipe.time || 'Not specified'}</p>
-
-                    <p>
-                      Difficulty: {recipe.difficulty || 'Not specified'}
-                    </p>
-
-                    <div className="recipe-actions">
-                      <button
-                        className="view-button"
-                        onClick={() => setSelectedRecipe(recipe)}
-                      >
-                        View Recipe
-                      </button>
-
-                      <button
-                        className={`favorite-button ${
-                          favorites.includes(recipe.id) ? 'favorited' : ''
-                        }`}
-                        onClick={() => toggleFavorite(recipe.id)}
-                      >
-                        {favorites.includes(recipe.id) ? '❤️' : '🤍'}
-                      </button>
-                    </div>
-
-                    {/* DELETE BUTTON FOR RECIPE OWNER */}
-                    {recipe.isShared &&
-                      currentUser?.role === 'user' &&
-                      recipe.sharedByEmail === currentUser.email && (
-                        <button
-                          className="delete-shared-button"
-                          onClick={() => deleteSharedRecipe(recipe)}
-                        >
-                          🗑️ Delete My Recipe
-                        </button>
-                      )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="no-recipes">
-                {showFavorites
-                  ? 'You have not added any favorites yet.'
-                  : 'No recipes found. Try another search!'}
+            <div className="modal-recipe-content">
+              <p className="hero-eyebrow">
+                {selectedRecipe.category}
               </p>
-            )}
-          </div>
 
-          {/* RECIPE DETAILS */}
-          {selectedRecipe && (
-            <div className="recipe-overlay">
-              <div className="recipe-details">
+              <h2>{selectedRecipe.name}</h2>
+              <p>{selectedRecipe.description}</p>
 
-                <button
-                  className="close-button"
-                  onClick={() => setSelectedRecipe(null)}
-                >
-                  ✕
-                </button>
+              <div className="recipe-meta">
+                <span>⏱ {selectedRecipe.time || "30 min"}</span>
+                <span>🍳 {selectedRecipe.difficulty || "Easy"}</span>
+              </div>
 
-                <h2>{selectedRecipe.name}</h2>
+              <button
+                className="favorite-button"
+                onClick={() => toggleFavorite(selectedRecipe.id)}
+              >
+                {favorites.includes(selectedRecipe.id) ? "♥" : "♡"}
+                {" "}
+                {favorites.includes(selectedRecipe.id)
+                  ? "Remove from Favourites"
+                  : "Add to Favourites"}
+              </button>
 
-                <img
-                  src={getImagePath(selectedRecipe.image)}
-                  alt={selectedRecipe.name}
-                />
+              <h3>Ingredients</h3>
 
-                {selectedRecipe.isShared && (
-                  <p>Shared by: {selectedRecipe.sharedBy}</p>
-                )}
+              <ul className="ingredient-list">
+                {(Array.isArray(selectedRecipe.ingredients)
+                  ? selectedRecipe.ingredients
+                  : String(selectedRecipe.ingredients || "").split("\n")
+                ).map((ingredient, index) => (
+                  <li key={index}>{ingredient}</li>
+                ))}
+              </ul>
 
-                <h3>Ingredients</h3>
+              <h3>Preparation Instructions</h3>
 
-                <p className="recipe-text">
-                  {Array.isArray(selectedRecipe.ingredients)
-                    ? selectedRecipe.ingredients.join('\n')
-                    : selectedRecipe.ingredients || 'No ingredients available.'}
-                </p>
+              <ol className="instruction-list">
+                {(Array.isArray(selectedRecipe.instructions)
+                  ? selectedRecipe.instructions
+                  : String(selectedRecipe.instructions || "").split("\n")
+                ).map((instruction, index) => (
+                  <li key={index}>{instruction}</li>
+                ))}
+              </ol>
 
-                <h3>Cooking Instructions</h3>
+              {/* REVIEWS */}
+              <section className="review-section">
+                <h3>Reviews and Ratings</h3>
 
-                <p className="recipe-text">
-                  {selectedRecipe.instructions || 'No instructions available.'}
-                </p>
-
-                <hr />
-
-                {/* RATINGS AND REVIEWS */}
-                <h2>⭐ Ratings and Reviews</h2>
-
-                {selectedReviews.length > 0 ? (
-                  <>
-                    <p>
-                      Average rating: <strong>{averageRating} / 5</strong>
-                    </p>
-
-                    {selectedReviews.map((review) => (
-                      <div className="review-card" key={review.id}>
-                        <p className="review-stars">
-                          {'⭐'.repeat(review.rating)}
-                        </p>
-
-                        <p>{review.comment}</p>
-                        <small>{review.date}</small>
-                      </div>
-                    ))}
-                  </>
+                {selectedRecipeReviews.length === 0 ? (
+                  <p>No reviews yet. Be the first to review!</p>
                 ) : (
-                  <p>
-                    No reviews yet. Be the first to review this recipe!
-                  </p>
+                  selectedRecipeReviews.map((review) => (
+                    <div
+                      className="review-item"
+                      key={review.id}
+                    >
+                      <strong>{review.userName}</strong>
+                      <p>{"★".repeat(review.rating)}</p>
+                      <p>{review.comment}</p>
+                      <small>{review.date}</small>
+                    </div>
+                  ))
                 )}
 
-                <h3>Write Your Review</h3>
+                <form
+                  className="review-form"
+                  onSubmit={submitReview}
+                >
+                  <label>
+                    Your Rating
+                    <select
+                      value={reviewForm.rating}
+                      onChange={(event) =>
+                        setReviewForm((previous) => ({
+                          ...previous,
+                          rating: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="5">★★★★★ - 5</option>
+                      <option value="4">★★★★ - 4</option>
+                      <option value="3">★★★ - 3</option>
+                      <option value="2">★★ - 2</option>
+                      <option value="1">★ - 1</option>
+                    </select>
+                  </label>
 
-                <form onSubmit={submitReview} className="review-form">
-                  <label htmlFor="rating">Select your rating:</label>
+                  <label>
+                    Write Your Review
+                    <textarea
+                      value={reviewForm.comment}
+                      onChange={(event) =>
+                        setReviewForm((previous) => ({
+                          ...previous,
+                          comment: event.target.value,
+                        }))
+                      }
+                      placeholder="Share your experience..."
+                      rows="3"
+                    />
+                  </label>
 
-                  <select
-                    id="rating"
-                    value={reviewRating}
-                    onChange={(event) => setReviewRating(event.target.value)}
+                  <button
+                    type="submit"
+                    className="primary-button"
                   >
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Very Good</option>
-                    <option value="3">3 - Good</option>
-                    <option value="2">2 - Fair</option>
-                    <option value="1">1 - Poor</option>
-                  </select>
-
-                  <label htmlFor="review">Write your review:</label>
-
-                  <textarea
-                    id="review"
-                    rows="4"
-                    placeholder="Share your experience..."
-                    value={reviewText}
-                    onChange={(event) => setReviewText(event.target.value)}
-                    required
-                  />
-
-                  <button type="submit" className="submit-review">
                     Submit Review
                   </button>
                 </form>
+              </section>
 
-                {selectedRecipe.isShared &&
-                  currentUser?.role === 'user' &&
-                  selectedRecipe.sharedByEmail === currentUser.email && (
-                    <button
-                      className="delete-shared-button"
-                      onClick={() => deleteSharedRecipe(selectedRecipe)}
-                    >
-                      🗑️ Delete My Recipe
-                    </button>
-                  )}
-
-                <button
-                  className="close-details"
-                  onClick={() => setSelectedRecipe(null)}
-                >
-                  Close Recipe
-                </button>
-              </div>
             </div>
-          )}
-        </main>
+          </div>
+        </div>
       )}
 
       {/* FOOTER */}
-      <footer className="footer">
-        <p>© 2026 The Food Recipe. All rights reserved.</p>
+      <footer className="site-footer">
+        <p>
+          © {new Date().getFullYear()} The Food Recipe. All rights reserved.
+        </p>
+        <p>Made with ♥ for food lovers.</p>
       </footer>
+
+      {/* LOGIN AND SIGNUP POPUP */}
+      {authMode && (
+        <AuthModal
+          initialTab={authMode}
+          onClose={closeAuth}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
+      )}
+
     </div>
   );
 }

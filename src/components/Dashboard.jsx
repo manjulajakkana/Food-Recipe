@@ -1,40 +1,44 @@
-
-import React from "react";
-
-function Dashboard({ currentUser, onLogout }) {
-  const isAdmin = currentUser.role === "admin";
-
+function Dashboard({ currentUser, onLogout, onHome }) {
   return (
-    <div className="dashboard-container">
+    <main className="user-dashboard">
       <div className="dashboard-card">
-        <h1>
-          {isAdmin ? "Admin Dashboard" : "User Dashboard"}
-        </h1>
+        <div className="auth-icon">👋</div>
 
-        <h2>Welcome, {currentUser.name}!</h2>
+        <p className="section-kicker">YOUR ACCOUNT</p>
+        <h1>Welcome, {currentUser?.name}!</h1>
 
-        <p>Email: {currentUser.email}</p>
-        <p>
-          Account Type: {isAdmin ? "Administrator" : "User"}
+        <p className="dashboard-description">
+          Your Food Recipe account is ready.
         </p>
 
-        {isAdmin ? (
+        <div className="dashboard-details">
           <div>
-            <h3>Admin Module</h3>
-            <p>You are logged in as the administrator.</p>
-            <p>You can manage the FOOD RECIPE application.</p>
+            <strong>Name</strong>
+            <span>{currentUser?.name}</span>
           </div>
-        ) : (
-          <div>
-            <h3>User Module</h3>
-            <p>Welcome to the FOOD RECIPE application.</p>
-            <p>You can explore recipes and manage your favorites.</p>
-          </div>
-        )}
 
-        <button onClick={onLogout}>Logout</button>
+          <div>
+            <strong>Email</strong>
+            <span>{currentUser?.email}</span>
+          </div>
+
+          <div>
+            <strong>Account Type</strong>
+            <span>{currentUser?.role || 'user'}</span>
+          </div>
+        </div>
+
+        <div className="dashboard-actions">
+          <button className="primary-button" onClick={onHome}>
+            🍽️ Explore Recipes
+          </button>
+
+          <button className="secondary-button" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 
