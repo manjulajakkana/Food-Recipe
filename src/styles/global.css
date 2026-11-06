@@ -747,6 +747,7 @@ img {
     padding: 20px;
   }
 }
+
 /* =========================================
    LOGIN AND SIGNUP
 ========================================= */
@@ -948,7 +949,10 @@ img {
   min-height: 110px;
 }
 
-.recipe-modal {
+/* Legacy modal styles renamed to avoid
+   conflicting with the React recipe popup. */
+
+.legacy-recipe-modal {
   position: fixed;
   inset: 0;
   z-index: 2000;
@@ -959,7 +963,7 @@ img {
   align-items: center;
 }
 
-.recipe-modal-content {
+.legacy-recipe-modal-content {
   width: 100%;
   max-width: 800px;
   max-height: 90vh;

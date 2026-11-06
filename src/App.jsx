@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 
 import { recipes as initialRecipes } from "./data/recipes";
@@ -28,6 +29,34 @@ const readStorage = (key, fallback) => {
   } catch {
     return fallback;
   }
+};
+
+/* ==========================================
+   RECIPE LIST CLEANING FUNCTION
+   Removes duplicate numbering and blank lines
+========================================== */
+
+const cleanRecipeItems = (value, removeNumbers = false) => {
+  const items = Array.isArray(value)
+    ? value
+    : String(value || "").split(/\r?\n/);
+
+  return items
+    .map((item) => String(item).trim())
+    .filter(Boolean)
+    .map((item) => {
+      if (removeNumbers) {
+        return item
+          .replace(
+            /^(?:(?:step\s*)?\d+\s*[.):\-]\s*|[-•*]\s*)+/i,
+            ""
+          )
+          .trim();
+      }
+
+      return item.replace(/^[-•*]\s*/, "").trim();
+    })
+    .filter(Boolean);
 };
 
 function App() {
@@ -69,6 +98,7 @@ function App() {
   });
 
   // Save all application data.
+
   useEffect(() => {
     localStorage.setItem(
       "foodRecipeRecipes",
@@ -109,6 +139,7 @@ function App() {
   }, [currentUser]);
 
   // Add the demo administrator account if it does not exist.
+
   useEffect(() => {
     setRegisteredUsers((previousUsers) => {
       const exists = previousUsers.some(
@@ -131,12 +162,14 @@ function App() {
     });
   }, []);
 
-  // Open and close the authentication popup.
+  // Open and close authentication popup.
+
   const openLogin = () => setAuthMode("login");
   const openSignup = () => setAuthMode("signup");
   const closeAuth = () => setAuthMode(null);
 
   // Login.
+
   const handleLogin = (email, password) => {
     const cleanEmail = String(email || "").trim().toLowerCase();
 
@@ -147,7 +180,6 @@ function App() {
       };
     }
 
-    // Administrator login.
     if (
       cleanEmail === ADMIN_EMAIL &&
       password === ADMIN_PASSWORD
@@ -169,7 +201,6 @@ function App() {
       };
     }
 
-    // Normal user login.
     const user = registeredUsers.find(
       (item) =>
         item.email?.toLowerCase() === cleanEmail &&
@@ -201,6 +232,7 @@ function App() {
   };
 
   // Signup.
+
   const handleSignup = (name, email, password) => {
     const cleanName = String(name || "").trim();
     const cleanEmail = String(email || "").trim().toLowerCase();
@@ -269,6 +301,7 @@ function App() {
   };
 
   // Logout.
+
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentPage("home");
@@ -278,6 +311,7 @@ function App() {
   };
 
   // Go to homepage.
+
   const openHome = () => {
     setCurrentPage("home");
     setSelectedRecipe(null);
@@ -287,6 +321,7 @@ function App() {
   };
 
   // Add or remove favourites.
+
   const toggleFavorite = (recipeId) => {
     setFavorites((previous) => {
       if (previous.includes(recipeId)) {
@@ -297,7 +332,8 @@ function App() {
     });
   };
 
-  // Delete a recipe shared by the logged-in user.
+  // Delete shared recipe.
+
   const handleDeleteSharedRecipe = (recipe) => {
     if (!currentUser) {
       openLogin();
@@ -315,6 +351,7 @@ function App() {
   };
 
   // Common recipe deletion function.
+
   const removeRecipe = (recipeId) => {
     setRecipeList((previous) =>
       previous.filter((recipe) => recipe.id !== recipeId)
@@ -334,28 +371,25 @@ function App() {
   };
 
   // Admin delete callback.
-  // Confirmation is already handled inside AdminDashboard.
+
   const handleDeleteRecipe = (recipeId) => {
     removeRecipe(recipeId);
   };
 
-  // Add recipe from the admin dashboard.
+  // Add recipe from admin dashboard.
+
   const handleAddRecipe = (newRecipe) => {
     const recipeToAdd = {
       ...newRecipe,
       id: Date.now(),
-      ingredients: Array.isArray(newRecipe.ingredients)
-        ? newRecipe.ingredients
-        : String(newRecipe.ingredients || "")
-            .split(/[\n,]+/)
-            .map((item) => item.trim())
-            .filter(Boolean),
-      instructions: Array.isArray(newRecipe.instructions)
-        ? newRecipe.instructions
-        : String(newRecipe.instructions || "")
-            .split("\n")
-            .map((item) => item.trim())
-            .filter(Boolean),
+
+      ingredients: cleanRecipeItems(newRecipe.ingredients),
+
+      instructions: cleanRecipeItems(
+        newRecipe.instructions,
+        true
+      ),
+
       author: "Admin",
     };
 
@@ -365,7 +399,8 @@ function App() {
     ]);
   };
 
-  // Update recipe from the admin dashboard.
+  // Update recipe from admin dashboard.
+
   const handleUpdateRecipe = (updatedRecipe) => {
     setRecipeList((previous) =>
       previous.map((recipe) =>
@@ -373,12 +408,15 @@ function App() {
           ? {
               ...recipe,
               ...updatedRecipe,
-              ingredients: Array.isArray(updatedRecipe.ingredients)
-                ? updatedRecipe.ingredients
-                : recipe.ingredients,
-              instructions: Array.isArray(updatedRecipe.instructions)
-                ? updatedRecipe.instructions
-                : recipe.instructions,
+
+              ingredients: cleanRecipeItems(
+                updatedRecipe.ingredients ?? recipe.ingredients
+              ),
+
+              instructions: cleanRecipeItems(
+                updatedRecipe.instructions ?? recipe.instructions,
+                true
+              ),
             }
           : recipe
       )
@@ -386,6 +424,7 @@ function App() {
   };
 
   // Open share recipe page.
+
   const openSharePage = () => {
     if (!currentUser) {
       openLogin();
@@ -398,6 +437,7 @@ function App() {
   };
 
   // Share form input.
+
   const handleShareInput = (event) => {
     const { name, value } = event.target;
 
@@ -408,6 +448,7 @@ function App() {
   };
 
   // Upload recipe image.
+
   const handleShareImage = (event) => {
     const file = event.target.files?.[0];
 
@@ -430,7 +471,8 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  // Publish a shared recipe.
+  // Publish shared recipe.
+
   const submitSharedRecipe = (event) => {
     event.preventDefault();
 
@@ -456,14 +498,16 @@ function App() {
       category: shareForm.category,
       craving: "",
       image: shareForm.image || "images/pizza.jpg",
-      ingredients: shareForm.ingredients
-        .split(/[\n,]+/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-      instructions: shareForm.instructions
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
+
+      ingredients: cleanRecipeItems(
+        shareForm.ingredients
+      ),
+
+      instructions: cleanRecipeItems(
+        shareForm.instructions,
+        true
+      ),
+
       time: shareForm.time.trim() || "30 min",
       difficulty: shareForm.difficulty,
       rating: "New",
@@ -486,6 +530,7 @@ function App() {
   };
 
   // Submit review.
+
   const submitReview = (event) => {
     event.preventDefault();
 
@@ -522,6 +567,7 @@ function App() {
   };
 
   // Filter recipes.
+
   const visibleRecipes = useMemo(() => {
     return recipeList.filter((recipe) => {
       const search = searchText.toLowerCase();
@@ -541,7 +587,8 @@ function App() {
       const matchesCategory =
         selectedCategory === "all" ||
         category === selectedCategory.toLowerCase() ||
-        category.replace(/\s/g, "") === selectedCategory.toLowerCase();
+        category.replace(/\s/g, "") ===
+          selectedCategory.toLowerCase();
 
       const matchesFavorite =
         !showFavorites || favorites.includes(recipe.id);
@@ -562,7 +609,8 @@ function App() {
       )
     : [];
 
-  // Include administrator in the registered users table.
+  // Admin users.
+
   const adminUser = {
     id: "admin-user",
     name: "Admin",
@@ -579,6 +627,7 @@ function App() {
   ];
 
   // Admin dashboard.
+
   if (currentPage === "admin" && currentUser?.role === "admin") {
     return (
       <AdminDashboard
@@ -595,6 +644,7 @@ function App() {
   }
 
   // Normal user dashboard.
+
   if (currentPage === "dashboard" && currentUser) {
     return (
       <Dashboard
@@ -609,6 +659,7 @@ function App() {
     <div className={`app ${darkMode ? "app-dark" : ""}`}>
 
       {/* HEADER */}
+
       <header className="site-header">
         <div className="header-inner">
 
@@ -642,6 +693,7 @@ function App() {
               onClick={() => {
                 setCurrentPage("home");
                 setShowFavorites((previous) => !previous);
+
                 document
                   .getElementById("recipes")
                   ?.scrollIntoView({ behavior: "smooth" });
@@ -689,10 +741,12 @@ function App() {
       </header>
 
       {/* HOME PAGE */}
+
       {currentPage === "home" && (
         <main>
 
           {/* HERO */}
+
           <section className="hero-section">
             <div className="hero-content">
 
@@ -760,6 +814,7 @@ function App() {
           </section>
 
           {/* CRAVINGS */}
+
           <section className="craving-section">
             <div className="section-heading">
               <p className="hero-eyebrow">EXPLORE BY TASTE</p>
@@ -797,6 +852,7 @@ function App() {
           </section>
 
           {/* RECIPE COLLECTION */}
+
           <section className="recipes-section" id="recipes">
 
             <div className="section-heading">
@@ -863,6 +919,7 @@ function App() {
             </div>
 
             <div className="recipe-grid">
+
               {visibleRecipes.map((recipe) => {
                 const isFavorite = favorites.includes(recipe.id);
 
@@ -923,7 +980,13 @@ function App() {
                       <div className="recipe-card-actions">
                         <button
                           className="view-button"
-                          onClick={() => setSelectedRecipe(recipe)}
+                          onClick={() => {
+                            setSelectedRecipe(recipe);
+                            setReviewForm({
+                              rating: 5,
+                              comment: "",
+                            });
+                          }}
                         >
                           View Recipe
                         </button>
@@ -944,11 +1007,13 @@ function App() {
                   </article>
                 );
               })}
+
             </div>
 
             {visibleRecipes.length === 0 && (
               <div className="empty-state">
                 <h3>No recipes found</h3>
+
                 <p>
                   Try another search or select a different category.
                 </p>
@@ -969,6 +1034,7 @@ function App() {
           </section>
 
           {/* SHARE BANNER */}
+
           <section className="share-banner">
             <h2>Have a delicious recipe to share?</h2>
 
@@ -989,6 +1055,7 @@ function App() {
       )}
 
       {/* SHARE RECIPE PAGE */}
+
       {currentPage === "share" && (
         <main className="share-page">
 
@@ -1085,7 +1152,9 @@ function App() {
                 name="instructions"
                 value={shareForm.instructions}
                 onChange={handleShareInput}
-                placeholder={"Prepare the ingredients.\nCook everything together."}
+                placeholder={
+                  "Prepare the ingredients.\nCook everything together."
+                }
                 rows="6"
                 required
               />
@@ -1134,7 +1203,10 @@ function App() {
         </main>
       )}
 
-      {/* RECIPE DETAILS POPUP */}
+      {/* ======================================
+          RECIPE DETAILS POPUP
+      ====================================== */}
+
       {selectedRecipe && (
         <div
           className="recipe-modal-backdrop"
@@ -1145,6 +1217,8 @@ function App() {
             onClick={(event) => event.stopPropagation()}
           >
 
+            {/* CLOSE BUTTON */}
+
             <button
               className="modal-close"
               onClick={() => setSelectedRecipe(null)}
@@ -1152,6 +1226,8 @@ function App() {
             >
               ×
             </button>
+
+            {/* RECIPE IMAGE */}
 
             <img
               className="modal-recipe-image"
@@ -1163,17 +1239,27 @@ function App() {
             />
 
             <div className="modal-recipe-content">
+
+              {/* CATEGORY */}
+
               <p className="hero-eyebrow">
                 {selectedRecipe.category}
               </p>
 
+              {/* TITLE */}
+
               <h2>{selectedRecipe.name}</h2>
+
               <p>{selectedRecipe.description}</p>
+
+              {/* TIME AND DIFFICULTY */}
 
               <div className="recipe-meta">
                 <span>⏱ {selectedRecipe.time || "30 min"}</span>
                 <span>🍳 {selectedRecipe.difficulty || "Easy"}</span>
               </div>
+
+              {/* FAVOURITES */}
 
               <button
                 className="favorite-button"
@@ -1186,34 +1272,45 @@ function App() {
                   : "Add to Favourites"}
               </button>
 
-              <h3>Ingredients</h3>
+              {/* INGREDIENTS */}
+
+              <h3>🥕 Ingredients</h3>
 
               <ul className="ingredient-list">
-                {(Array.isArray(selectedRecipe.ingredients)
-                  ? selectedRecipe.ingredients
-                  : String(selectedRecipe.ingredients || "").split("\n")
+                {cleanRecipeItems(
+                  selectedRecipe.ingredients
                 ).map((ingredient, index) => (
-                  <li key={index}>{ingredient}</li>
+                  <li key={`${selectedRecipe.id}-ingredient-${index}`}>
+                    {ingredient}
+                  </li>
                 ))}
               </ul>
 
-              <h3>Preparation Instructions</h3>
+              {/* PREPARATION */}
+
+              <h3>👩‍🍳 Preparation</h3>
 
               <ol className="instruction-list">
-                {(Array.isArray(selectedRecipe.instructions)
-                  ? selectedRecipe.instructions
-                  : String(selectedRecipe.instructions || "").split("\n")
+                {cleanRecipeItems(
+                  selectedRecipe.instructions,
+                  true
                 ).map((instruction, index) => (
-                  <li key={index}>{instruction}</li>
+                  <li key={`${selectedRecipe.id}-step-${index}`}>
+                    {instruction}
+                  </li>
                 ))}
               </ol>
 
               {/* REVIEWS */}
+
               <section className="review-section">
-                <h3>Reviews and Ratings</h3>
+
+                <h3>⭐ Reviews and Ratings</h3>
 
                 {selectedRecipeReviews.length === 0 ? (
-                  <p>No reviews yet. Be the first to review!</p>
+                  <p>
+                    No reviews yet. Be the first to review this recipe! ❤️
+                  </p>
                 ) : (
                   selectedRecipeReviews.map((review) => (
                     <div
@@ -1221,19 +1318,26 @@ function App() {
                       key={review.id}
                     >
                       <strong>{review.userName}</strong>
+
                       <p>{"★".repeat(review.rating)}</p>
+
                       <p>{review.comment}</p>
+
                       <small>{review.date}</small>
                     </div>
                   ))
                 )}
 
+                {/* REVIEW FORM */}
+
                 <form
                   className="review-form"
                   onSubmit={submitReview}
                 >
+
                   <label>
-                    Your Rating
+                    ⭐ Rate this Recipe
+
                     <select
                       value={reviewForm.rating}
                       onChange={(event) =>
@@ -1253,6 +1357,7 @@ function App() {
 
                   <label>
                     Write Your Review
+
                     <textarea
                       value={reviewForm.comment}
                       onChange={(event) =>
@@ -1261,7 +1366,7 @@ function App() {
                           comment: event.target.value,
                         }))
                       }
-                      placeholder="Share your experience..."
+                      placeholder="Write your review..."
                       rows="3"
                     />
                   </label>
@@ -1270,8 +1375,9 @@ function App() {
                     type="submit"
                     className="primary-button"
                   >
-                    Submit Review
+                    📝 Submit Review
                   </button>
+
                 </form>
               </section>
 
@@ -1281,14 +1387,17 @@ function App() {
       )}
 
       {/* FOOTER */}
+
       <footer className="site-footer">
         <p>
           © {new Date().getFullYear()} The Food Recipe. All rights reserved.
         </p>
+
         <p>Made with ♥ for food lovers.</p>
       </footer>
 
       {/* LOGIN AND SIGNUP POPUP */}
+
       {authMode && (
         <AuthModal
           initialTab={authMode}
