@@ -1430,13 +1430,22 @@ function App() {
 
               <h3>Preparation Instructions</h3>
 
+              {/* FIXED NUMBERING:
+                  Remove empty lines and existing manual numbers.
+                  The ordered list automatically displays numbers in order. */}
               <ol className="instruction-list">
                 {(Array.isArray(selectedRecipe.instructions)
                   ? selectedRecipe.instructions
-                  : String(selectedRecipe.instructions || "").split("\n")
-                ).map((instruction, index) => (
-                  <li key={index}>{instruction}</li>
-                ))}
+                  : String(selectedRecipe.instructions || "").split(/\r?\n/)
+                )
+                  .map((instruction) => String(instruction).trim())
+                  .filter((instruction) => instruction.length > 0)
+                  .map((instruction) =>
+                    instruction.replace(/^\d+[.)]\s*/, "")
+                  )
+                  .map((instruction, index) => (
+                    <li key={index}>{instruction}</li>
+                  ))}
               </ol>
 
               {/* REVIEWS */}
