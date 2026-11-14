@@ -57,11 +57,11 @@ The application is deployed using **Vercel**.
 
 ## Live Website
 
-[https://food-recipe-web-alpha.vercel.app/](https://food-recipe-web-alpha.vercel.app/)
+https://food-recipe-web-alpha.vercel.app
 
 ## GitHub Repository
 
-[https://github.com/manjulajakkana/Food-Recipe](https://github.com/manjulajakkana/Food-Recipe)
+https://github.com/manjulajakkana/Food-Recipe
 
 ---
 
