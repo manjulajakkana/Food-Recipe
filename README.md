@@ -1,36 +1,70 @@
-<<<<<<< HEAD
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
 # 🍽️ The Food Recipe Website
 
-The Food Recipe website is a web development project created using HTML, CSS, and JavaScript. It helps users explore delicious recipes, discover different cuisines, and find cooking inspiration. Users can search for recipes, view step-by-step cooking instructions, save their favorite recipes, and share recipes with others. The website also provides an interactive and user-friendly experience for discovering new dishes.
+The Food Recipe Website is a web application developed using **React, Vite, HTML, CSS, and JavaScript**. It helps users discover delicious recipes, explore different cuisines, and find cooking inspiration. Users can search for recipes, view ingredients and cooking instructions, save their favorite recipes, share their own recipes, and explore new dishes through an interactive and user-friendly interface.
+
+## Features
+
+- **User Module:** User registration, login, and logout.
+- **Recipe Exploration:** Browse recipes and explore different food categories.
+- **Search and Filter:** Find recipes using recipe names, categories, and ingredients.
+- **Favorites:** Save and manage favorite recipes.
+- **Share Recipe:** Submit and share personal recipes.
+- **Recipe Details:** View ingredients, preparation time, difficulty, and cooking instructions.
+- **Reviews and Ratings:** Add ratings and comments to recipes.
+- **Admin Module:** Manage recipes, users, and reviews.
+- **Dark Mode:** Switch between light and dark themes.
 
 ## Technologies Used
-- HTML
-- CSS
-- JavaScript
+
+- React.js
+- Vite
+- HTML5
+- CSS3
+- JavaScript (ES6+)
+- Local Storage
 
 ## Development Environment
+
 - Visual Studio Code (VS Code)
+- Node.js
+- npm
+- Git and GitHub
+
+## Run Locally
+
+Make sure Node.js is installed on your system.
+
+Open the project folder in VS Code and run:
+
+```bash
+npm install
+npm run dev
+```
+
+Open the local URL displayed in your terminal to access the application.
+
+## Build and Deploy
+
+To create a production build, run:
+
+```bash
+npm run build
+```
+
+The production files will be generated inside the `dist` folder.
+
+The application is deployed using **Vercel**.
 
 ## Live Website
-https://manjulajakkana.github.io/Food-Recipe/
+
+[https://food-recipe-web-alpha.vercel.app/](https://food-recipe-web-alpha.vercel.app/)
 
 ## GitHub Repository
-https://github.com/manjulajakkana/Food-Recipe
->>>>>>> a5ca503def863dffc1366b849306d0522b6e6e07
+
+[https://github.com/manjulajakkana/Food-Recipe](https://github.com/manjulajakkana/Food-Recipe)
+
+---
+
+**Project:** The Food Recipe Website  
+**Development:** React + Vite  
+**Status:** Deployed
