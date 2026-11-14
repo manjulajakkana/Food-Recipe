@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 function AuthModal({
@@ -31,7 +32,7 @@ function AuthModal({
     if (result?.success) {
       onClose();
     } else {
-      setMessage(result?.message || 'Invalid email or password.');
+      setMessage(result?.message || 'Invalid username or password.');
     }
   }
 
@@ -214,6 +215,16 @@ function AuthModal({
           font-size: 13px;
         }
 
+        .admin-login-hint {
+          margin-top: 18px;
+          padding: 12px;
+          border-radius: 10px;
+          background: #fff5ef;
+          color: #76665c;
+          font-size: 12px;
+          line-height: 1.7;
+        }
+
         @media (max-width: 480px) {
           .auth-modal {
             padding: 25px 22px 28px;
@@ -232,6 +243,7 @@ function AuthModal({
         }}
       >
         <div className="auth-modal">
+
           <div className="auth-tabs">
             <button
               type="button"
@@ -262,47 +274,69 @@ function AuthModal({
           {activeTab === 'login' ? (
             <div className="auth-content">
               <h2>Welcome Back 👋</h2>
+
               <p>
                 Login to explore, save and share your favourite recipes.
               </p>
 
               <form className="auth-form" onSubmit={handleLogin}>
-                <label>Email Address</label>
+
+                <label>Username or Email Address</label>
+
                 <input
-                  type="email"
-                  placeholder="Enter your email"
+                  type="text"
+                  placeholder="Enter username or email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="username"
                   required
                 />
 
                 <label>Password</label>
+
                 <input
                   type="password"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
                   required
                 />
 
                 {message && (
-                  <div className="auth-message">{message}</div>
+                  <div className="auth-message" role="alert">
+                    {message}
+                  </div>
                 )}
 
                 <button className="auth-submit" type="submit">
                   🔐 Login
                 </button>
+
               </form>
+
+              <div className="admin-login-hint">
+                <strong>Admin Login Details</strong>
+                <br />
+                Username: adminmanjula
+                <br />
+                Email: admin@foodrecipe.demo
+                <br />
+                Password: Admin@123
+              </div>
             </div>
           ) : (
             <div className="auth-content">
               <h2>Create Account ✨</h2>
+
               <p>
                 Join our food community and share delicious recipes.
               </p>
 
               <form className="auth-form" onSubmit={handleSignup}>
+
                 <label>Full Name</label>
+
                 <input
                   type="text"
                   placeholder="Enter your full name"
@@ -312,6 +346,7 @@ function AuthModal({
                 />
 
                 <label>Email Address</label>
+
                 <input
                   type="email"
                   placeholder="Enter your email"
@@ -321,6 +356,7 @@ function AuthModal({
                 />
 
                 <label>Password</label>
+
                 <input
                   type="password"
                   placeholder="Create a password"
@@ -330,6 +366,7 @@ function AuthModal({
                 />
 
                 <label>Confirm Password</label>
+
                 <input
                   type="password"
                   placeholder="Confirm your password"
@@ -341,15 +378,19 @@ function AuthModal({
                 />
 
                 {message && (
-                  <div className="auth-message">{message}</div>
+                  <div className="auth-message" role="alert">
+                    {message}
+                  </div>
                 )}
 
                 <button className="auth-submit" type="submit">
                   ✨ Create Account
                 </button>
+
               </form>
             </div>
           )}
+
         </div>
       </div>
     </>
