@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 
 import { recipes as initialRecipes } from "./data/recipes";
@@ -292,16 +291,9 @@ function App() {
       newUser,
     ]);
 
-    setCurrentUser({
-      id: newUser.id,
-      name: newUser.name,
-      username: newUser.username,
-      email: newUser.email,
-      role: "user",
-    });
-
+    // Signup only creates the account. The user must log in separately
+    // before accessing recipes and other protected features.
     setCurrentPage("home");
-    setAuthMode(null);
 
     return {
       success: true,
@@ -330,6 +322,12 @@ function App() {
 
   // Add or remove favourites.
   const toggleFavorite = (recipeId) => {
+    if (!currentUser) {
+      alert("Please login to access this feature.");
+      openLogin();
+      return;
+    }
+
     setFavorites((previous) => {
       if (previous.includes(recipeId)) {
         return previous.filter((id) => id !== recipeId);
@@ -425,10 +423,10 @@ function App() {
       )
     );
   };
-
-  // Open share recipe page.
+    // Open share recipe page.
   const openSharePage = () => {
     if (!currentUser) {
+      alert("Please login to access this feature.");
       openLogin();
       return;
     }
@@ -476,6 +474,7 @@ function App() {
     event.preventDefault();
 
     if (!currentUser) {
+      alert("Please login to access this feature.");
       openLogin();
       return;
     }
@@ -531,6 +530,7 @@ function App() {
     event.preventDefault();
 
     if (!currentUser) {
+      alert("Please login to access this feature.");
       openLogin();
       return;
     }
@@ -828,6 +828,12 @@ function App() {
             <button
               className="header-favorite"
               onClick={() => {
+                if (!currentUser) {
+                  alert("Please login to access this feature.");
+                  openLogin();
+                  return;
+                }
+
                 setCurrentPage("home");
                 setShowFavorites((previous) => !previous);
                 document
@@ -850,8 +856,7 @@ function App() {
           </div>
         </div>
       </header>
-
-      {/* HOME PAGE */}
+            {/* HOME PAGE */}
       {currentPage === "home" && (
         <main>
 
@@ -1059,9 +1064,15 @@ function App() {
 
               <button
                 className="favorites-filter"
-                onClick={() =>
-                  setShowFavorites((previous) => !previous)
-                }
+                onClick={() => {
+                  if (!currentUser) {
+                    alert("Please login to access this feature.");
+                    openLogin();
+                    return;
+                  }
+
+                  setShowFavorites((previous) => !previous);
+                }}
               >
                 {showFavorites
                   ? "Show All Recipes"
@@ -1146,7 +1157,15 @@ function App() {
 
                         <button
                           className="view-button"
-                          onClick={() => setSelectedRecipe(recipe)}
+                          onClick={() => {
+                            if (!currentUser) {
+                              alert("Please login to access this feature.");
+                              openLogin();
+                              return;
+                            }
+
+                            setSelectedRecipe(recipe);
+                          }}
                         >
                           View Recipe
                         </button>
@@ -1363,8 +1382,7 @@ function App() {
           </form>
         </main>
       )}
-
-      {/* RECIPE DETAILS POPUP */}
+            {/* RECIPE DETAILS POPUP */}
       {selectedRecipe && (
         <div
           className="recipe-modal-backdrop"
