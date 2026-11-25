@@ -1,57 +1,57 @@
 
-import { useState } from 'react';
+import { useState } from "react";
 
 function AuthModal({
-  initialTab = 'login',
+  initialTab = "login",
   onClose,
   onLogin,
   onSignup,
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   function changeTab(tab) {
     setActiveTab(tab);
-    setName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setMessage('');
+    setName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setMessage("");
   }
 
   function handleLogin(event) {
     event.preventDefault();
-    setMessage('');
+    setMessage("");
 
     const result = onLogin(email, password);
 
     if (result?.success) {
       onClose();
     } else {
-      setMessage(result?.message || 'Invalid username or password.');
+      setMessage(result?.message || "Invalid username or password.");
     }
   }
 
   function handleSignup(event) {
     event.preventDefault();
-    setMessage('');
+    setMessage("");
 
     if (!name.trim()) {
-      setMessage('Please enter your name.');
+      setMessage("Please enter your name.");
       return;
     }
 
     if (password.length < 6) {
-      setMessage('Password must contain at least 6 characters.');
+      setMessage("Password must contain at least 6 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage('Passwords do not match.');
+      setMessage("Passwords do not match.");
       return;
     }
 
@@ -60,7 +60,7 @@ function AuthModal({
     if (result?.success) {
       onClose();
     } else {
-      setMessage(result?.message || 'Unable to create your account.');
+      setMessage(result?.message || "Unable to create your account.");
     }
   }
 
@@ -80,6 +80,7 @@ function AuthModal({
         }
 
         .auth-modal {
+          position: relative;
           width: 100%;
           max-width: 440px;
           max-height: 90vh;
@@ -215,16 +216,6 @@ function AuthModal({
           font-size: 13px;
         }
 
-        .admin-login-hint {
-          margin-top: 18px;
-          padding: 12px;
-          border-radius: 10px;
-          background: #fff5ef;
-          color: #76665c;
-          font-size: 12px;
-          line-height: 1.7;
-        }
-
         @media (max-width: 480px) {
           .auth-modal {
             padding: 25px 22px 28px;
@@ -247,16 +238,16 @@ function AuthModal({
           <div className="auth-tabs">
             <button
               type="button"
-              className={activeTab === 'login' ? 'active' : ''}
-              onClick={() => changeTab('login')}
+              className={activeTab === "login" ? "active" : ""}
+              onClick={() => changeTab("login")}
             >
               Login
             </button>
 
             <button
               type="button"
-              className={activeTab === 'signup' ? 'active' : ''}
-              onClick={() => changeTab('signup')}
+              className={activeTab === "signup" ? "active" : ""}
+              onClick={() => changeTab("signup")}
             >
               Sign Up
             </button>
@@ -271,7 +262,7 @@ function AuthModal({
             </button>
           </div>
 
-          {activeTab === 'login' ? (
+          {activeTab === "login" ? (
             <div className="auth-content">
               <h2>Welcome Back 👋</h2>
 
@@ -314,16 +305,6 @@ function AuthModal({
                 </button>
 
               </form>
-
-              <div className="admin-login-hint">
-                <strong>Admin Login Details</strong>
-                <br />
-                Username: adminmanjula
-                <br />
-                Email: admin@foodrecipe.demo
-                <br />
-                Password: Admin@123
-              </div>
             </div>
           ) : (
             <div className="auth-content">

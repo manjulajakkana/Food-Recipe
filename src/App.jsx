@@ -1,9 +1,11 @@
+
 import { useEffect, useMemo, useState } from "react";
 
 import { recipes as initialRecipes } from "./data/recipes";
 import AuthModal from "./components/AuthModal";
 import Dashboard from "./components/Dashboard";
 import AdminDashboard from "./components/AdminDashboard";
+import CommunityRecipes from "./components/CommunityRecipes";
 
 import "./App.css";
 
@@ -59,9 +61,12 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [currentPage, setCurrentPage] = useState("home");
 
+  // Show role selection whenever the website is opened.
+  const [hasEnteredApp, setHasEnteredApp] = useState(false);
+
   const [authMode, setAuthMode] = useState(null);
 
-  // Separate admin access state
+  // Admin access state
   const [showAdminAccess, setShowAdminAccess] = useState(false);
   const [adminPasscode, setAdminPasscode] = useState("");
   const [adminAccessMessage, setAdminAccessMessage] = useState("");
@@ -74,7 +79,7 @@ function App() {
     comment: "",
   });
 
-  // Save all application data.
+  // Save application data.
   useEffect(() => {
     localStorage.setItem(
       "foodRecipeRecipes",
@@ -137,12 +142,18 @@ function App() {
     });
   }, []);
 
-  // Open and close the authentication popup.
+  // Login and signup popup.
   const openLogin = () => setAuthMode("login");
   const openSignup = () => setAuthMode("signup");
   const closeAuth = () => setAuthMode(null);
 
-  // Open the separate admin passcode screen.
+  // Customer option opens the existing login/signup popup.
+  const openCustomerAccess = () => {
+    setShowAdminAccess(false);
+    setAuthMode("login");
+  };
+
+  // Admin option opens the passcode popup.
   const openAdminAccess = () => {
     setAuthMode(null);
     setSelectedRecipe(null);
@@ -151,7 +162,7 @@ function App() {
     setShowAdminAccess(true);
   };
 
-  // Verify the admin passcode before opening the dashboard.
+  // Verify admin passcode.
   const handleAdminAccess = (event) => {
     event.preventDefault();
 
@@ -173,10 +184,11 @@ function App() {
     setShowAdminAccess(false);
     setAdminPasscode("");
     setAdminAccessMessage("");
+    setHasEnteredApp(true);
     setCurrentPage("admin");
   };
 
-  // Login.
+  // Customer login.
   const handleLogin = (email, password) => {
     const cleanEmail = String(email || "").trim().toLowerCase();
 
@@ -187,34 +199,33 @@ function App() {
       };
     }
 
-    // Administrator login.
-    if (
-      cleanEmail === ADMIN_EMAIL &&
-      password === ADMIN_PASSWORD
-    ) {
-      setCurrentUser({
-        id: "admin-user",
-        name: "Admin",
-        username: "Admin",
-        email: ADMIN_EMAIL,
-        role: "admin",
-      });
-
-      setCurrentPage("admin");
-      setAuthMode(null);
-
+    // Admin must use the separate passcode option.
+    if (cleanEmail === ADMIN_EMAIL) {
       return {
-        success: true,
-        message: "Admin login successful!",
+        success: false,
+        message: "Please use the Admin option and enter the admin passcode.",
       };
     }
 
-    // Normal user login.
-    const user = registeredUsers.find(
-      (item) =>
-        item.email?.toLowerCase() === cleanEmail &&
+    // Allow login using either username or email.
+    const user = registeredUsers.find((item) => {
+      const savedEmail = String(item.email || "")
+        .trim()
+        .toLowerCase();
+
+      const savedUsername = String(
+        item.username || item.name || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      return (
+        item.role !== "admin" &&
+        (savedEmail === cleanEmail ||
+          savedUsername === cleanEmail) &&
         item.password === password
-    );
+      );
+    });
 
     if (!user) {
       return {
@@ -232,6 +243,7 @@ function App() {
     });
 
     setCurrentPage("home");
+    setHasEnteredApp(true);
     setAuthMode(null);
 
     return {
@@ -240,7 +252,7 @@ function App() {
     };
   };
 
-  // Signup.
+  // Customer signup.
   const handleSignup = (name, email, password) => {
     const cleanName = String(name || "").trim();
     const cleanEmail = String(email || "").trim().toLowerCase();
@@ -291,8 +303,7 @@ function App() {
       newUser,
     ]);
 
-    // Signup only creates the account. The user must log in separately
-    // before accessing recipes and other protected features.
+    // Account creation does not automatically log the customer in.
     setCurrentPage("home");
 
     return {
@@ -309,6 +320,7 @@ function App() {
     setShowFavorites(false);
     setAuthMode(null);
     setShowAdminAccess(false);
+    setHasEnteredApp(false);
   };
 
   // Go to homepage.
@@ -423,7 +435,8 @@ function App() {
       )
     );
   };
-    // Open share recipe page.
+
+  // Open share recipe page.
   const openSharePage = () => {
     if (!currentUser) {
       alert("Please login to access this feature.");
@@ -562,6 +575,27 @@ function App() {
     });
   };
 
+  // Add a rating and review from the Community Recipes popup.
+  const handleAddCommunityReview = (recipeId, rating, comment) => {
+    if (!currentUser) {
+      alert("Please login to access this feature.");
+      openLogin();
+      return;
+    }
+
+    setReviews((previous) => [
+      ...previous,
+      {
+        id: Date.now(),
+        recipeId,
+        userName: currentUser.name,
+        rating: Number(rating),
+        comment,
+        date: new Date().toLocaleDateString(),
+      },
+    ]);
+  };
+
   // Filter recipes.
   const visibleRecipes = useMemo(() => {
     return recipeList.filter((recipe) => {
@@ -650,8 +684,179 @@ function App() {
   return (
     <div className={`app ${darkMode ? "app-dark" : ""}`}>
 
-      {/* ADMIN ACCESS POPUP STYLING */}
+      {/* OPENING PAGE AND ADMIN ACCESS STYLING */}
       <style>{`
+        .entry-screen {
+          min-height: 100vh;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 45px 20px;
+          background:
+            radial-gradient(circle at 15% 15%, #fff0e8 0, transparent 35%),
+            linear-gradient(135deg, #fff8ef, #f7e2bd, #fff4e4);
+        }
+
+        .entry-container {
+          width: 100%;
+          max-width: 1000px;
+          margin: auto;
+          text-align: center;
+        }
+
+        .entry-logo {
+          width: 85px;
+          height: 85px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 25px;
+          background: #fff;
+          border: 2px solid #f05b32;
+          border-radius: 50%;
+          font-size: 43px;
+          box-shadow: 0 8px 25px rgba(80, 50, 30, .12);
+        }
+
+        .entry-eyebrow {
+          color: #e45b32;
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 4px;
+          margin-bottom: 8px;
+        }
+
+        .entry-container > h1 {
+          font-family: Georgia, serif;
+          font-size: clamp(36px, 6vw, 62px);
+          font-weight: 900;
+          color: #d66a27;
+          margin-bottom: 12px;
+        }
+
+        .entry-description {
+          color: #51443c;
+          font-size: 19px;
+          margin-bottom: 8px;
+        }
+
+        .entry-subtitle {
+          color: #81746c;
+          font-size: 15px;
+          margin-bottom: 38px;
+        }
+
+        .entry-cards {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 25px;
+          max-width: 720px;
+          margin: 0 auto;
+        }
+
+        .entry-card {
+          position: relative;
+          min-height: 300px;
+          padding: 35px 30px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          text-align: left;
+          background: rgba(255, 255, 255, .82);
+          border: 1px solid rgba(255, 255, 255, .95);
+          border-radius: 25px;
+          box-shadow: 0 12px 35px rgba(70, 40, 20, .08);
+          cursor: pointer;
+          transition: transform .25s, box-shadow .25s;
+        }
+
+        .entry-card:hover,
+        .entry-card:focus-visible {
+          transform: translateY(-7px);
+          box-shadow: 0 18px 40px rgba(70, 40, 20, .15);
+          outline: 2px solid #e8a04a;
+        }
+
+        .entry-icon {
+          width: 65px;
+          height: 65px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 22px;
+          border-radius: 18px;
+          font-size: 30px;
+          box-shadow: 0 8px 18px rgba(0, 0, 0, .10);
+        }
+
+        .customer-entry .entry-icon {
+          background: linear-gradient(135deg, #f05b32, #e99a35);
+        }
+
+        .admin-entry .entry-icon {
+          background: linear-gradient(135deg, #7e9e52, #a3b96d);
+        }
+
+        .entry-card h2 {
+          font-family: Georgia, serif;
+          font-size: 27px;
+          color: #332b27;
+          margin: 0 0 12px;
+        }
+
+        .entry-card p {
+          color: #776b63;
+          font-size: 15px;
+          line-height: 1.8;
+          margin: 0 0 22px;
+        }
+
+        .entry-card span {
+          margin-top: auto;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .customer-entry span {
+          color: #f05b32;
+        }
+
+        .admin-entry span {
+          color: #718f42;
+        }
+
+        .entry-footer {
+          margin-top: 38px;
+          color: #81746c;
+          font-size: 12px;
+        }
+
+        @media (max-width: 600px) {
+          .entry-screen {
+            padding: 35px 18px;
+          }
+
+          .entry-cards {
+            grid-template-columns: 1fr;
+            max-width: 380px;
+            gap: 18px;
+          }
+
+          .entry-card {
+            min-height: 250px;
+            padding: 27px;
+          }
+
+          .entry-container > h1 {
+            font-size: 36px;
+          }
+
+          .entry-description {
+            font-size: 16px;
+          }
+        }
+
         .admin-access-overlay {
           position: fixed;
           inset: 0;
@@ -762,132 +967,102 @@ function App() {
         }
       `}</style>
 
-      {/* HEADER */}
-      <header className="site-header">
-        <div className="header-inner">
+      {/* FIRST SCREEN: CUSTOMER OR ADMIN */}
+      {!hasEnteredApp && (
+        <main className="entry-screen">
+          <div className="entry-container">
 
-          <button className="brand" onClick={openHome}>
-            <span className="brand-icon">🍽️</span>
-            <span>The Food Recipe</span>
-          </button>
+            <div className="entry-logo">🍽️</div>
 
-          <nav className="main-nav">
-            <button onClick={openHome}>Home</button>
+            <p className="entry-eyebrow">WELCOME TO</p>
 
-            <button
-              onClick={() =>
-                document
-                  .getElementById("recipes")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              Recipes
-            </button>
+            <h1>THE FOOD RECIPE</h1>
 
-            <button onClick={openSharePage}>
-              Share Recipe
-            </button>
-          </nav>
+            <p className="entry-description">
+              Discover delicious food. Discover happiness.
+            </p>
 
-          {/* HEADER ORDER: LOGIN, ADMIN, FAVOURITES, THEME */}
-          <div className="header-actions">
+            <p className="entry-subtitle">
+              Choose how you would like to continue.
+            </p>
 
-            {currentUser ? (
-              <>
-                <button
-                  className="account-button"
-                  onClick={() => setCurrentPage("dashboard")}
-                >
-                  👤 {currentUser.name}
-                </button>
+            <div className="entry-cards">
 
-                <button
-                  className="login-button"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <button
-                className="login-button"
-                onClick={openLogin}
+              {/* CUSTOMER OPTION */}
+              <div
+                className="entry-card customer-entry"
+                role="button"
+                tabIndex={0}
+                onClick={openCustomerAccess}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openCustomerAccess();
+                  }
+                }}
               >
-                👤 Login
-              </button>
-            )}
+                <div className="entry-icon">👤</div>
 
-            {/* SEPARATE ADMIN ACCESS BUTTON */}
-            <button
-              className="login-button admin-dashboard-button"
-              onClick={openAdminAccess}
-            >
-              🛡️ Admin
-            </button>
+                <h2>Customer</h2>
 
-            <button
-              className="header-favorite"
-              onClick={() => {
-                if (!currentUser) {
-                  alert("Please login to access this feature.");
-                  openLogin();
-                  return;
-                }
+                <p>
+                  Login or create an account to explore recipes,
+                  save favourites, make and share delicious recipes.
+                </p>
 
-                setCurrentPage("home");
-                setShowFavorites((previous) => !previous);
-                document
-                  .getElementById("recipes")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              title="Show favourites"
-            >
-              ♥ {favorites.length}
-            </button>
+                <span>Customer Login →</span>
+              </div>
 
-            <button
-              className="theme-toggle"
-              onClick={() => setDarkMode((previous) => !previous)}
-              title="Change theme"
-            >
-              {darkMode ? "☀️" : "🌙"}
-            </button>
+              {/* ADMIN OPTION */}
+              <div
+                className="entry-card admin-entry"
+                role="button"
+                tabIndex={0}
+                onClick={openAdminAccess}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openAdminAccess();
+                  }
+                }}
+              >
+                <div className="entry-icon">🛡️</div>
+
+                <h2>Admin</h2>
+
+                <p>
+                  Manage recipes, registered users, reviews and
+                  monitor your Food Recipe website.
+                </p>
+
+                <span>Admin Sign In →</span>
+              </div>
+
+            </div>
+
+            <p className="entry-footer">
+              © {new Date().getFullYear()} The Food Recipe
+            </p>
 
           </div>
-        </div>
-      </header>
-            {/* HOME PAGE */}
-      {currentPage === "home" && (
-        <main>
+        </main>
+      )}
 
-          {/* HERO */}
-          <section className="hero-section">
-            <div className="hero-content">
+      {/* SHOW THE NORMAL WEBSITE ONLY AFTER SUCCESSFUL LOGIN */}
+      {hasEnteredApp && (
+        <>
 
-              <p className="hero-eyebrow">
-                WELCOME TO THE FOOD RECIPE
-              </p>
+          {/* HEADER */}
+          <header className="site-header">
+            <div className="header-inner">
 
-              <h1>
-                Discover delicious food.
-                <br />
-                Discover happiness.
-              </h1>
+              <button className="brand" onClick={openHome}>
+                <span className="brand-icon">🍽️</span>
+                <span>The Food Recipe</span>
+              </button>
 
-              <p>
-                Delicious recipes, easy cooking and food inspiration
-                all in one place.
-              </p>
-
-              <div className="hero-search">
-                <input
-                  type="text"
-                  placeholder="Search for biryani, pizza, cake..."
-                  value={searchText}
-                  onChange={(event) =>
-                    setSearchText(event.target.value)
-                  }
-                />
+              <nav className="main-nav">
+                <button onClick={openHome}>Home</button>
 
                 <button
                   onClick={() =>
@@ -896,660 +1071,775 @@ function App() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                 >
-                  🔍 Search
+                  Recipes
                 </button>
-              </div>
 
-              <button
-                className="primary-button"
-                onClick={openSharePage}
-              >
-                + Share Your Recipe
-              </button>
+                <button onClick={openSharePage}>
+                  Share Recipe
+                </button>
+              </nav>
 
-            </div>
+              <div className="header-actions">
 
-            <div className="hero-image-area">
-              <div className="hero-image-frame">
-                <img
-                  src="images/biryani.jpg"
-                  alt="Delicious food"
-                  onError={(event) => {
-                    event.currentTarget.src = "images/pizza.jpg";
-                  }}
-                />
-              </div>
+                {currentUser ? (
+                  <>
+                    <button
+                      className="account-button"
+                      onClick={() => setCurrentPage("dashboard")}
+                    >
+                      👤 {currentUser.name}
+                    </button>
 
-              <div className="hero-floating-card">
-                <strong>{recipeList.length}+</strong>
-                <span>Delicious recipes</span>
-              </div>
-            </div>
-          </section>
+                    <button
+                      className="login-button"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="login-button"
+                    onClick={openLogin}
+                  >
+                    👤 Login
+                  </button>
+                )}
 
-          {/* CRAVINGS */}
-          <section className="craving-section">
-            <div className="section-heading">
-              <p className="hero-eyebrow">EXPLORE BY TASTE</p>
-              <h2>What are you craving? 😊</h2>
-              <p>Tell us what your taste buds want today.</p>
-            </div>
-
-            <div className="craving-options">
-              {[
-                { name: "Spicy", emoji: "🌶️" },
-                { name: "Sweet", emoji: "🍰" },
-                { name: "Healthy", emoji: "🥗" },
-                { name: "Cheesy", emoji: "🧀" },
-                { name: "Fresh", emoji: "🥑" },
-                { name: "Savory", emoji: "🍟" },
-              ].map((item) => (
                 <button
-                  className="craving-option"
-                  key={item.name}
+                  className="header-favorite"
                   onClick={() => {
-                    setSelectedCategory("all");
-                    setShowFavorites(false);
-                    setIngredientSearch("");
+                    if (!currentUser) {
+                      alert("Please login to access this feature.");
+                      openLogin();
+                      return;
+                    }
 
-                    setSearchText(item.name);
+                    setCurrentPage("home");
+                    setShowFavorites((previous) => !previous);
 
                     document
                       .getElementById("recipes")
                       ?.scrollIntoView({ behavior: "smooth" });
                   }}
+                  title="Show favourites"
                 >
-                  <span>{item.emoji}</span>
-                  {item.name}
+                  ♥ {favorites.length}
                 </button>
-              ))}
+
+                <button
+                  className="theme-toggle"
+                  onClick={() => setDarkMode((previous) => !previous)}
+                  title="Change theme"
+                >
+                  {darkMode ? "☀️" : "🌙"}
+                </button>
+
+              </div>
             </div>
-          </section>
+          </header>
 
-          {/* FIND RECIPES BY INGREDIENTS */}
-          <section className="ingredient-section">
-            <div className="ingredient-content">
+          {/* HOME PAGE */}
+          {currentPage === "home" && (
+            <main>
 
-              <div className="ingredient-heading">
-                <h2>🥕 Find Recipes by Ingredients</h2>
+              {/* HERO */}
+              <section className="hero-section">
+                <div className="hero-content">
+
+                  <p className="hero-eyebrow">
+                    WELCOME TO THE FOOD RECIPE
+                  </p>
+
+                  <h1>
+                    Discover delicious food.
+                    <br />
+                    Discover happiness.
+                  </h1>
+
+                  <p>
+                    Delicious recipes, easy cooking and food inspiration
+                    all in one place.
+                  </p>
+
+                  <div className="hero-search">
+                    <input
+                      type="text"
+                      placeholder="Search for biryani, pizza, cake..."
+                      value={searchText}
+                      onChange={(event) =>
+                        setSearchText(event.target.value)
+                      }
+                    />
+
+                    <button
+                      onClick={() =>
+                        document
+                          .getElementById("recipes")
+                          ?.scrollIntoView({ behavior: "smooth" })
+                      }
+                    >
+                      🔍 Search
+                    </button>
+                  </div>
+
+                  <button
+                    className="primary-button"
+                    onClick={openSharePage}
+                  >
+                    + Share Your Recipe
+                  </button>
+
+                </div>
+
+                <div className="hero-image-area">
+                  <div className="hero-image-frame">
+                    <img
+                      src="images/biryani.jpg"
+                      alt="Delicious food"
+                      onError={(event) => {
+                        event.currentTarget.src = "images/pizza.jpg";
+                      }}
+                    />
+                  </div>
+
+                  <div className="hero-floating-card">
+                    <strong>{recipeList.length}+</strong>
+                    <span>Delicious recipes</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* CRAVINGS */}
+              <section className="craving-section">
+                <div className="section-heading">
+                  <p className="hero-eyebrow">EXPLORE BY TASTE</p>
+                  <h2>What are you craving? 😊</h2>
+                  <p>Tell us what your taste buds want today.</p>
+                </div>
+
+                <div className="craving-options">
+                  {[
+                    { name: "Spicy", emoji: "🌶️" },
+                    { name: "Sweet", emoji: "🍰" },
+                    { name: "Healthy", emoji: "🥗" },
+                    { name: "Cheesy", emoji: "🧀" },
+                    { name: "Fresh", emoji: "🥑" },
+                    { name: "Savory", emoji: "🍟" },
+                  ].map((item) => (
+                    <button
+                      className="craving-option"
+                      key={item.name}
+                      onClick={() => {
+                        setSelectedCategory("all");
+                        setShowFavorites(false);
+                        setIngredientSearch("");
+                        setSearchText(item.name);
+
+                        document
+                          .getElementById("recipes")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                    >
+                      <span>{item.emoji}</span>
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* FIND RECIPES BY INGREDIENTS */}
+              <section className="ingredient-section">
+                <div className="ingredient-content">
+
+                  <div className="ingredient-heading">
+                    <h2>🥕 Find Recipes by Ingredients</h2>
+
+                    <p>
+                      Enter the ingredients you have and discover recipes you can make.
+                    </p>
+                  </div>
+
+                  <form
+                    className="ingredient-search-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+
+                      setSearchText(ingredientSearch.trim());
+                      setSelectedCategory("all");
+                      setShowFavorites(false);
+
+                      document
+                        .getElementById("recipes")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  >
+                    <input
+                      className="ingredient-search"
+                      type="text"
+                      value={ingredientSearch}
+                      onChange={(event) =>
+                        setIngredientSearch(event.target.value)
+                      }
+                      placeholder="Example: chicken, onion, tomato"
+                      aria-label="Enter ingredients"
+                    />
+
+                    <button
+                      type="submit"
+                      className="ingredient-search-button"
+                    >
+                      🔍 Find Recipes
+                    </button>
+
+                    <small>
+                      💡 Enter multiple ingredients separated by commas.
+                    </small>
+                  </form>
+
+                </div>
+              </section>
+
+              {/* RECIPE COLLECTION */}
+              <section className="recipes-section" id="recipes">
+
+                <div className="section-heading">
+                  <p className="hero-eyebrow">OUR COLLECTION</p>
+
+                  <h2>
+                    {showFavorites
+                      ? "Your Favourite Recipes"
+                      : "Explore Our Recipes"}
+                  </h2>
+
+                  <p>
+                    Discover tasty recipes and find your next favourite dish.
+                  </p>
+                </div>
+
+                <div className="recipe-toolbar">
+
+                  <div className="category-buttons">
+                    {[
+                      ["all", "All"],
+                      ["indian", "Indian"],
+                      ["fastfood", "Fast Food"],
+                      ["italian", "Italian"],
+                      ["dessert", "Desserts"],
+                      ["healthy", "Healthy"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        className={
+                          selectedCategory === value ? "active" : ""
+                        }
+                        onClick={() => {
+                          setSelectedCategory(value);
+                          setShowFavorites(false);
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    className="favorites-filter"
+                    onClick={() => {
+                      if (!currentUser) {
+                        alert("Please login to access this feature.");
+                        openLogin();
+                        return;
+                      }
+
+                      setShowFavorites((previous) => !previous);
+                    }}
+                  >
+                    {showFavorites
+                      ? "Show All Recipes"
+                      : "♥ My Favourites"}
+                  </button>
+
+                </div>
+
+                <div className="recipe-search-row">
+                  <input
+                    type="text"
+                    placeholder="Search recipes or ingredients..."
+                    value={searchText}
+                    onChange={(event) =>
+                      setSearchText(event.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="recipe-grid">
+
+                  {visibleRecipes.map((recipe) => {
+                    const isFavorite = favorites.includes(recipe.id);
+
+                    const isOwner =
+                      currentUser &&
+                      recipe.isShared &&
+                      recipe.sharedByEmail === currentUser.email;
+
+                    return (
+                      <article className="recipe-card" key={recipe.id}>
+
+                        <div className="recipe-image-wrap">
+
+                          <img
+                            className="recipe-image"
+                            src={recipe.image || "images/pizza.jpg"}
+                            alt={recipe.name}
+                            onError={(event) => {
+                              event.currentTarget.src = "images/pizza.jpg";
+                            }}
+                          />
+
+                          <span className="recipe-category">
+                            {recipe.category}
+                          </span>
+
+                          <button
+                            className={`favorite-button ${
+                              isFavorite ? "is-favorite" : ""
+                            }`}
+                            onClick={() => toggleFavorite(recipe.id)}
+                            title="Add or remove favourite"
+                          >
+                            {isFavorite ? "♥" : "♡"}
+                          </button>
+
+                        </div>
+
+                        <div className="recipe-info">
+                          <h3>{recipe.name}</h3>
+
+                          <p>{recipe.description}</p>
+
+                          {recipe.isShared && (
+                            <p className="shared-by">
+                              Shared by {recipe.sharedBy || "A user"}
+                            </p>
+                          )}
+
+                          <div className="recipe-rating">
+                            <span>★</span>
+                            {recipe.rating || "New recipe"}
+                          </div>
+
+                          <div className="recipe-meta">
+                            <span>⏱ {recipe.time || "30 min"}</span>
+                            <span>🍳 {recipe.difficulty || "Easy"}</span>
+                          </div>
+
+                          <div className="recipe-card-actions">
+
+                            <button
+                              className="view-button"
+                              onClick={() => {
+                                if (!currentUser) {
+                                  alert("Please login to access this feature.");
+                                  openLogin();
+                                  return;
+                                }
+
+                                setSelectedRecipe(recipe);
+                              }}
+                            >
+                              View Recipe
+                            </button>
+
+                            {isOwner && (
+                              <button
+                                className="delete-shared-button"
+                                onClick={() =>
+                                  handleDeleteSharedRecipe(recipe)
+                                }
+                              >
+                                Delete
+                              </button>
+                            )}
+
+                          </div>
+                        </div>
+
+                      </article>
+                    );
+                  })}
+
+                </div>
+
+                {visibleRecipes.length === 0 && (
+                  <div className="empty-state">
+                    <h3>No recipes found</h3>
+
+                    <p>
+                      Try another search or select a different category.
+                    </p>
+
+                    <button
+                      className="secondary-button"
+                      onClick={() => {
+                        setSearchText("");
+                        setSelectedCategory("all");
+                        setShowFavorites(false);
+                      }}
+                    >
+                      Show All Recipes
+                    </button>
+                  </div>
+                )}
+
+              </section>
+
+              {/* SHARE BANNER */}
+              <section className="share-banner">
+
+                <h2>Have a delicious recipe to share?</h2>
 
                 <p>
-                  Enter the ingredients you have and discover recipes you can make.
+                  Share your cooking ideas and let others discover your
+                  favourite dishes.
                 </p>
+
+                <button
+                  className="primary-button"
+                  onClick={openSharePage}
+                >
+                  Share Your Recipe
+                </button>
+
+              </section>
+
+            </main>
+          )}
+
+          {/* SHARE RECIPE PAGE */}
+          {currentPage === "share" && (
+            <main className="share-page">
+
+              <div className="section-heading">
+                <p className="hero-eyebrow">COMMUNITY RECIPES</p>
+                <h2>Share Your Recipe</h2>
+                <p>Tell everyone about your delicious creation.</p>
               </div>
 
               <form
-                className="ingredient-search-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-
-                  setSearchText(ingredientSearch.trim());
-                  setSelectedCategory("all");
-                  setShowFavorites(false);
-
-                  document
-                    .getElementById("recipes")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
+                className="share-form"
+                onSubmit={submitSharedRecipe}
               >
-                <input
-                  className="ingredient-search"
-                  type="text"
-                  value={ingredientSearch}
-                  onChange={(event) =>
-                    setIngredientSearch(event.target.value)
-                  }
-                  placeholder="Example: chicken, onion, tomato"
-                  aria-label="Enter ingredients"
-                />
 
-                <button
-                  type="submit"
-                  className="ingredient-search-button"
-                >
-                  🔍 Find Recipes
-                </button>
-
-                <small>
-                  💡 Enter multiple ingredients separated by commas.
-                </small>
-              </form>
-
-            </div>
-          </section>
-
-          {/* RECIPE COLLECTION */}
-          <section className="recipes-section" id="recipes">
-
-            <div className="section-heading">
-              <p className="hero-eyebrow">OUR COLLECTION</p>
-
-              <h2>
-                {showFavorites
-                  ? "Your Favourite Recipes"
-                  : "Explore Our Recipes"}
-              </h2>
-
-              <p>
-                Discover tasty recipes and find your next favourite dish.
-              </p>
-            </div>
-
-            <div className="recipe-toolbar">
-
-              <div className="category-buttons">
-                {[
-                  ["all", "All"],
-                  ["indian", "Indian"],
-                  ["chinese", "Chinese"],
-                  ["fastfood", "Fast Food"],
-                  ["italian", "Italian"],
-                  ["dessert", "Desserts"],
-                  ["healthy", "Healthy"],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    className={
-                      selectedCategory === value ? "active" : ""
-                    }
-                    onClick={() => {
-                      setSelectedCategory(value);
-                      setShowFavorites(false);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                className="favorites-filter"
-                onClick={() => {
-                  if (!currentUser) {
-                    alert("Please login to access this feature.");
-                    openLogin();
-                    return;
-                  }
-
-                  setShowFavorites((previous) => !previous);
-                }}
-              >
-                {showFavorites
-                  ? "Show All Recipes"
-                  : "♥ My Favourites"}
-              </button>
-
-            </div>
-
-            <div className="recipe-search-row">
-              <input
-                type="text"
-                placeholder="Search recipes or ingredients..."
-                value={searchText}
-                onChange={(event) =>
-                  setSearchText(event.target.value)
-                }
-              />
-            </div>
-
-            <div className="recipe-grid">
-
-              {visibleRecipes.map((recipe) => {
-                const isFavorite = favorites.includes(recipe.id);
-
-                const isOwner =
-                  currentUser &&
-                  recipe.isShared &&
-                  recipe.sharedByEmail === currentUser.email;
-
-                return (
-                  <article className="recipe-card" key={recipe.id}>
-
-                    <div className="recipe-image-wrap">
-
-                      <img
-                        className="recipe-image"
-                        src={recipe.image || "images/pizza.jpg"}
-                        alt={recipe.name}
-                        onError={(event) => {
-                          event.currentTarget.src = "images/pizza.jpg";
-                        }}
-                      />
-
-                      <span className="recipe-category">
-                        {recipe.category}
-                      </span>
-
-                      <button
-                        className={`favorite-button ${
-                          isFavorite ? "is-favorite" : ""
-                        }`}
-                        onClick={() => toggleFavorite(recipe.id)}
-                        title="Add or remove favourite"
-                      >
-                        {isFavorite ? "♥" : "♡"}
-                      </button>
-
-                    </div>
-
-                    <div className="recipe-info">
-                      <h3>{recipe.name}</h3>
-
-                      <p>{recipe.description}</p>
-
-                      {recipe.isShared && (
-                        <p className="shared-by">
-                          Shared by {recipe.sharedBy || "A user"}
-                        </p>
-                      )}
-
-                      <div className="recipe-rating">
-                        <span>★</span>
-                        {recipe.rating || "New recipe"}
-                      </div>
-
-                      <div className="recipe-meta">
-                        <span>⏱ {recipe.time || "30 min"}</span>
-                        <span>🍳 {recipe.difficulty || "Easy"}</span>
-                      </div>
-
-                      <div className="recipe-card-actions">
-
-                        <button
-                          className="view-button"
-                          onClick={() => {
-                            if (!currentUser) {
-                              alert("Please login to access this feature.");
-                              openLogin();
-                              return;
-                            }
-
-                            setSelectedRecipe(recipe);
-                          }}
-                        >
-                          View Recipe
-                        </button>
-
-                        {isOwner && (
-                          <button
-                            className="delete-shared-button"
-                            onClick={() =>
-                              handleDeleteSharedRecipe(recipe)
-                            }
-                          >
-                            Delete
-                          </button>
-                        )}
-
-                      </div>
-                    </div>
-
-                  </article>
-                );
-              })}
-
-            </div>
-
-            {visibleRecipes.length === 0 && (
-              <div className="empty-state">
-                <h3>No recipes found</h3>
-
-                <p>
-                  Try another search or select a different category.
-                </p>
-
-                <button
-                  className="secondary-button"
-                  onClick={() => {
-                    setSearchText("");
-                    setSelectedCategory("all");
-                    setShowFavorites(false);
-                  }}
-                >
-                  Show All Recipes
-                </button>
-              </div>
-            )}
-
-          </section>
-
-          {/* SHARE BANNER */}
-          <section className="share-banner">
-
-            <h2>Have a delicious recipe to share?</h2>
-
-            <p>
-              Share your cooking ideas and let others discover your
-              favourite dishes.
-            </p>
-
-            <button
-              className="primary-button"
-              onClick={openSharePage}
-            >
-              Share Your Recipe
-            </button>
-
-          </section>
-
-        </main>
-      )}
-
-      {/* SHARE RECIPE PAGE */}
-      {currentPage === "share" && (
-        <main className="share-page">
-
-          <div className="section-heading">
-            <p className="hero-eyebrow">COMMUNITY RECIPES</p>
-            <h2>Share Your Recipe</h2>
-            <p>Tell everyone about your delicious creation.</p>
-          </div>
-
-          <form
-            className="share-form"
-            onSubmit={submitSharedRecipe}
-          >
-
-            <div className="form-grid">
-              <label>
-                Recipe Name *
-                <input
-                  name="name"
-                  value={shareForm.name}
-                  onChange={handleShareInput}
-                  placeholder="Enter recipe name"
-                  required
-                />
-              </label>
-
-              <label>
-                Category *
-                <select
-                  name="category"
-                  value={shareForm.category}
-                  onChange={handleShareInput}
-                >
-                  <option value="indian">Indian</option>
-                  <option value="chinese">Chinese</option>
-                  <option value="fastfood">Fast Food</option>
-                  <option value="italian">Italian</option>
-                  <option value="dessert">Dessert</option>
-                  <option value="healthy">Healthy</option>
-                </select>
-              </label>
-
-              <label>
-                Preparation Time
-                <input
-                  name="time"
-                  value={shareForm.time}
-                  onChange={handleShareInput}
-                  placeholder="Example: 30 min"
-                />
-              </label>
-
-              <label>
-                Difficulty
-                <select
-                  name="difficulty"
-                  value={shareForm.difficulty}
-                  onChange={handleShareInput}
-                >
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-              </label>
-            </div>
-
-            <label>
-              Description *
-              <textarea
-                name="description"
-                value={shareForm.description}
-                onChange={handleShareInput}
-                placeholder="Write a short description..."
-                rows="3"
-                required
-              />
-            </label>
-
-            <label>
-              Ingredients *
-              <textarea
-                name="ingredients"
-                value={shareForm.ingredients}
-                onChange={handleShareInput}
-                placeholder={"Rice\nTomatoes\nOnions"}
-                rows="5"
-                required
-              />
-            </label>
-
-            <label>
-              Preparation Instructions *
-              <textarea
-                name="instructions"
-                value={shareForm.instructions}
-                onChange={handleShareInput}
-                placeholder={"Prepare the ingredients.\nCook everything together."}
-                rows="6"
-                required
-              />
-            </label>
-
-            <label>
-              Recipe Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleShareImage}
-              />
-            </label>
-
-            {shareForm.image && (
-              <div className="share-image-preview">
-                <img
-                  src={shareForm.image}
-                  alt="Recipe preview"
-                />
-              </div>
-            )}
-
-            {shareMessage && (
-              <p className="auth-error">{shareMessage}</p>
-            )}
-
-            <div className="share-form-actions">
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={openHome}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                className="primary-button"
-              >
-                Publish Recipe
-              </button>
-
-            </div>
-
-          </form>
-        </main>
-      )}
-            {/* RECIPE DETAILS POPUP */}
-      {selectedRecipe && (
-        <div
-          className="recipe-modal-backdrop"
-          onClick={() => setSelectedRecipe(null)}
-        >
-          <div
-            className="recipe-modal"
-            onClick={(event) => event.stopPropagation()}
-          >
-
-            <button
-              className="modal-close"
-              onClick={() => setSelectedRecipe(null)}
-              aria-label="Close recipe"
-            >
-              ×
-            </button>
-
-            <img
-              className="modal-recipe-image"
-              src={selectedRecipe.image || "images/pizza.jpg"}
-              alt={selectedRecipe.name}
-              onError={(event) => {
-                event.currentTarget.src = "images/pizza.jpg";
-              }}
-            />
-
-            <div className="modal-recipe-content">
-
-              <p className="hero-eyebrow">
-                {selectedRecipe.category}
-              </p>
-
-              <h2>{selectedRecipe.name}</h2>
-              <p>{selectedRecipe.description}</p>
-
-              <div className="recipe-meta">
-                <span>⏱ {selectedRecipe.time || "30 min"}</span>
-                <span>🍳 {selectedRecipe.difficulty || "Easy"}</span>
-              </div>
-
-              <button
-                className="favorite-button"
-                onClick={() => toggleFavorite(selectedRecipe.id)}
-              >
-                {favorites.includes(selectedRecipe.id) ? "♥" : "♡"}
-                {" "}
-                {favorites.includes(selectedRecipe.id)
-                  ? "Remove from Favourites"
-                  : "Add to Favourites"}
-              </button>
-
-              <h3>Ingredients</h3>
-
-              <ul className="ingredient-list">
-                {(Array.isArray(selectedRecipe.ingredients)
-                  ? selectedRecipe.ingredients
-                  : String(selectedRecipe.ingredients || "").split("\n")
-                ).map((ingredient, index) => (
-                  <li key={index}>{ingredient}</li>
-                ))}
-              </ul>
-
-              <h3>Preparation Instructions</h3>
-
-              {/* FIXED NUMBERING:
-                  Remove empty lines and existing manual numbers.
-                  The ordered list automatically displays numbers in order. */}
-              <ol className="instruction-list">
-                {(Array.isArray(selectedRecipe.instructions)
-                  ? selectedRecipe.instructions
-                  : String(selectedRecipe.instructions || "").split(/\r?\n/)
-                )
-                  .map((instruction) => String(instruction).trim())
-                  .filter((instruction) => instruction.length > 0)
-                  .map((instruction) =>
-                    instruction.replace(/^\d+[.)]\s*/, "")
-                  )
-                  .map((instruction, index) => (
-                    <li key={index}>{instruction}</li>
-                  ))}
-              </ol>
-
-              {/* REVIEWS */}
-              <section className="review-section">
-
-                <h3>Reviews and Ratings</h3>
-
-                {selectedRecipeReviews.length === 0 ? (
-                  <p>No reviews yet. Be the first to review!</p>
-                ) : (
-                  selectedRecipeReviews.map((review) => (
-                    <div
-                      className="review-item"
-                      key={review.id}
-                    >
-                      <strong>{review.userName}</strong>
-                      <p>{"★".repeat(review.rating)}</p>
-                      <p>{review.comment}</p>
-                      <small>{review.date}</small>
-                    </div>
-                  ))
-                )}
-
-                <form
-                  className="review-form"
-                  onSubmit={submitReview}
-                >
+                <div className="form-grid">
+                  <label>
+                    Recipe Name *
+                    <input
+                      name="name"
+                      value={shareForm.name}
+                      onChange={handleShareInput}
+                      placeholder="Enter recipe name"
+                      required
+                    />
+                  </label>
 
                   <label>
-                    Your Rating
+                    Category *
                     <select
-                      value={reviewForm.rating}
-                      onChange={(event) =>
-                        setReviewForm((previous) => ({
-                          ...previous,
-                          rating: event.target.value,
-                        }))
-                      }
+                      name="category"
+                      value={shareForm.category}
+                      onChange={handleShareInput}
                     >
-                      <option value="5">★★★★★ - 5</option>
-                      <option value="4">★★★★ - 4</option>
-                      <option value="3">★★★ - 3</option>
-                      <option value="2">★★ - 2</option>
-                      <option value="1">★ - 1</option>
+                      <option value="indian">Indian</option>
+                      <option value="fastfood">Fast Food</option>
+                      <option value="italian">Italian</option>
+                      <option value="dessert">Dessert</option>
+                      <option value="healthy">Healthy</option>
                     </select>
                   </label>
 
                   <label>
-                    Write Your Review
-                    <textarea
-                      value={reviewForm.comment}
-                      onChange={(event) =>
-                        setReviewForm((previous) => ({
-                          ...previous,
-                          comment: event.target.value,
-                        }))
-                      }
-                      placeholder="Share your experience..."
-                      rows="3"
+                    Preparation Time
+                    <input
+                      name="time"
+                      value={shareForm.time}
+                      onChange={handleShareInput}
+                      placeholder="Example: 30 min"
                     />
                   </label>
+
+                  <label>
+                    Difficulty
+                    <select
+                      name="difficulty"
+                      value={shareForm.difficulty}
+                      onChange={handleShareInput}
+                    >
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label>
+                  Description *
+                  <textarea
+                    name="description"
+                    value={shareForm.description}
+                    onChange={handleShareInput}
+                    placeholder="Write a short description..."
+                    rows="3"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Ingredients *
+                  <textarea
+                    name="ingredients"
+                    value={shareForm.ingredients}
+                    onChange={handleShareInput}
+                    placeholder={"Rice\nTomatoes\nOnions"}
+                    rows="5"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Preparation Instructions *
+                  <textarea
+                    name="instructions"
+                    value={shareForm.instructions}
+                    onChange={handleShareInput}
+                    placeholder={"Prepare the ingredients.\nCook everything together."}
+                    rows="6"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Recipe Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleShareImage}
+                  />
+                </label>
+
+                {shareForm.image && (
+                  <div className="share-image-preview">
+                    <img
+                      src={shareForm.image}
+                      alt="Recipe preview"
+                    />
+                  </div>
+                )}
+
+                {shareMessage && (
+                  <p className="auth-error">{shareMessage}</p>
+                )}
+
+                <div className="share-form-actions">
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={openHome}
+                  >
+                    Cancel
+                  </button>
 
                   <button
                     type="submit"
                     className="primary-button"
                   >
-                    Submit Review
+                    Publish Recipe
                   </button>
 
-                </form>
-              </section>
+                </div>
 
+              </form>
+
+              {/* COMMUNITY RECIPES */}
+              <CommunityRecipes
+                recipes={recipeList}
+                currentUser={currentUser}
+                reviews={reviews}
+                onDelete={handleDeleteSharedRecipe}
+                onAddReview={handleAddCommunityReview}
+              />
+            </main>
+          )}
+
+          {/* RECIPE DETAILS POPUP */}
+          {selectedRecipe && (
+            <div
+              className="recipe-modal-backdrop"
+              onClick={() => setSelectedRecipe(null)}
+            >
+              <div
+                className="recipe-modal"
+                onClick={(event) => event.stopPropagation()}
+              >
+
+                <button
+                  className="modal-close"
+                  onClick={() => setSelectedRecipe(null)}
+                  aria-label="Close recipe"
+                >
+                  ×
+                </button>
+
+                <img
+                  className="modal-recipe-image"
+                  src={selectedRecipe.image || "images/pizza.jpg"}
+                  alt={selectedRecipe.name}
+                  onError={(event) => {
+                    event.currentTarget.src = "images/pizza.jpg";
+                  }}
+                />
+
+                <div className="modal-recipe-content">
+
+                  <p className="hero-eyebrow">
+                    {selectedRecipe.category}
+                  </p>
+
+                  <h2>{selectedRecipe.name}</h2>
+                  <p>{selectedRecipe.description}</p>
+
+                  <div className="recipe-meta">
+                    <span>⏱ {selectedRecipe.time || "30 min"}</span>
+                    <span>🍳 {selectedRecipe.difficulty || "Easy"}</span>
+                  </div>
+
+                  <button
+                    className="favorite-button"
+                    onClick={() => toggleFavorite(selectedRecipe.id)}
+                  >
+                    {favorites.includes(selectedRecipe.id) ? "♥" : "♡"}
+                    {" "}
+                    {favorites.includes(selectedRecipe.id)
+                      ? "Remove from Favourites"
+                      : "Add to Favourites"}
+                  </button>
+
+                  <h3>Ingredients</h3>
+
+                  <ul className="ingredient-list">
+                    {(Array.isArray(selectedRecipe.ingredients)
+                      ? selectedRecipe.ingredients
+                      : String(selectedRecipe.ingredients || "").split("\n")
+                    ).map((ingredient, index) => (
+                      <li key={index}>{ingredient}</li>
+                    ))}
+                  </ul>
+
+                  <h3>Preparation Instructions</h3>
+
+                  <ol className="instruction-list">
+                    {(Array.isArray(selectedRecipe.instructions)
+                      ? selectedRecipe.instructions
+                      : String(selectedRecipe.instructions || "").split(/\r?\n/)
+                    )
+                      .map((instruction) => String(instruction).trim())
+                      .filter((instruction) => instruction.length > 0)
+                      .map((instruction) =>
+                        instruction.replace(/^\d+[.)]\s*/, "")
+                      )
+                      .map((instruction, index) => (
+                        <li key={index}>{instruction}</li>
+                      ))}
+                  </ol>
+
+                  {/* REVIEWS */}
+                  <section className="review-section">
+
+                    <h3>Reviews and Ratings</h3>
+
+                    {selectedRecipeReviews.length === 0 ? (
+                      <p>No reviews yet. Be the first to review!</p>
+                    ) : (
+                      selectedRecipeReviews.map((review) => (
+                        <div
+                          className="review-item"
+                          key={review.id}
+                        >
+                          <strong>{review.userName}</strong>
+                          <p>{"★".repeat(review.rating)}</p>
+                          <p>{review.comment}</p>
+                          <small>{review.date}</small>
+                        </div>
+                      ))
+                    )}
+
+                    <form
+                      className="review-form"
+                      onSubmit={submitReview}
+                    >
+
+                      <label>
+                        Your Rating
+                        <select
+                          value={reviewForm.rating}
+                          onChange={(event) =>
+                            setReviewForm((previous) => ({
+                              ...previous,
+                              rating: event.target.value,
+                            }))
+                          }
+                        >
+                          <option value="5">★★★★★ - 5</option>
+                          <option value="4">★★★★ - 4</option>
+                          <option value="3">★★★ - 3</option>
+                          <option value="2">★★ - 2</option>
+                          <option value="1">★ - 1</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Write Your Review
+                        <textarea
+                          value={reviewForm.comment}
+                          onChange={(event) =>
+                            setReviewForm((previous) => ({
+                              ...previous,
+                              comment: event.target.value,
+                            }))
+                          }
+                          placeholder="Share your experience..."
+                          rows="3"
+                        />
+                      </label>
+
+                      <button
+                        type="submit"
+                        className="primary-button"
+                      >
+                        Submit Review
+                      </button>
+
+                    </form>
+                  </section>
+
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+
+          {/* FOOTER */}
+          <footer className="site-footer">
+            <p>
+              © {new Date().getFullYear()} The Food Recipe. All rights reserved.
+            </p>
+            <p>Made with ♥ for food lovers.</p>
+          </footer>
+
+        </>
       )}
 
-      {/* FOOTER */}
-      <footer className="site-footer">
-        <p>
-          © {new Date().getFullYear()} The Food Recipe. All rights reserved.
-        </p>
-        <p>Made with ♥ for food lovers.</p>
-      </footer>
-
-      {/* SEPARATE ADMIN PASSCODE ACCESS */}
+      {/* ADMIN PASSCODE POPUP */}
       {showAdminAccess && (
         <div
           className="admin-access-overlay"
@@ -1612,7 +1902,7 @@ function App() {
         </div>
       )}
 
-      {/* LOGIN AND SIGNUP POPUP - ORIGINAL COMPONENT PRESERVED */}
+      {/* EXISTING CUSTOMER LOGIN AND SIGNUP POPUP */}
       {authMode && (
         <AuthModal
           initialTab={authMode}
